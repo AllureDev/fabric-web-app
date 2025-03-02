@@ -30,7 +30,7 @@ async function fetchFabrics() {
             allHeaders.forEach(header => {
                 fabric[header] = row.c[headerMap[header]]?.v || '';
             });
-            fabric.imageLink = convertDropboxLink(fabric["Image Link"]);
+            fabric.imageLink = sanitizeImageLink(fabric["Image Link"]);
             return fabric;
         });
         console.log('Fabric data with image links:', fabrics);
@@ -43,19 +43,29 @@ async function fetchFabrics() {
     }
 }
 
-// Convert Dropbox shareable link to direct image URL
-function convertDropboxLink(link) {
+// Sanitize and validate image link (works with any direct URL)
+function sanitizeImageLink(link) {
     if (!link) {
         console.warn('No image link provided');
         return 'https://via.placeholder.com/150?text=No+Image';
     }
-    if (link.includes('dropbox.com')) {
-        const directLink = link.replace('?dl=0', '?raw=1').replace('?dl=1', '?raw=1');
-        console.log('Converted Dropbox link:', directLink);
-        return directLink;
+
+    // Check if the link is a valid URL and likely an image
+    try {
+        const url = new URL(link);
+        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+        const isImage = imageExtensions.some(ext => url.pathname.toLowerCase().endsWith(ext));
+        
+        if (!isImage) {
+            console.warn('Link may not be an image:', link);
+        }
+        
+        console.log('Using direct image link:', link);
+        return link;
+    } catch (e) {
+        console.error('Invalid URL provided:', link);
+        return 'https://via.placeholder.com/150?text=Invalid+Link';
     }
-    console.log('Using provided link as-is:', link);
-    return link;
 }
 
 // Display fabrics in grid
@@ -105,7 +115,7 @@ function showFabricDetails(fabric) {
     modal.className = 'modal';
     modal.innerHTML = `
         <div class="modal-content">
-            <span class="close">&times;</span>
+            <span class="close">×</span>
             <img src="${fabric.imageLink}" alt="${fabric.Name}" style="max-width:100%;">
             <h2>${fabric.Name}</h2>
             <p><strong>SKU:</strong> ${fabric.SKU}</p>
