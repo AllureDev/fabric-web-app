@@ -176,11 +176,14 @@ function setupFilters(allFabrics) {
 
         const filtered = allFabrics.filter(fabric => {
             const rollWidthNum = parseFloat(fabric["Roll Width"]) || 0;
+            // Extract numeric part from Band Width (e.g., "3 Thick" -> "3")
+            const bandWidthValue = fabric["Band Width"] ? String(fabric["Band Width"]).match(/^\d+/)?.[0] || '' : '';
+            
             return (
                 (!selectedType || fabric.Type === selectedType) &&
                 (!selectedFamily || fabric.Family === selectedFamily) &&
                 (!selectedColour || fabric.Colour === selectedColour) &&
-                (!selectedBandWidth || String(fabric["Band Width"]) === selectedBandWidth) &&
+                (!selectedBandWidth || bandWidthValue === selectedBandWidth) && // Compare numeric part only
                 (rollWidthValue === 0 || rollWidthNum >= rollWidthValue) &&
                 (!selectedSchedule || fabric.Schedule === selectedSchedule) &&
                 (!selectedStatus || fabric.Status === selectedStatus)
