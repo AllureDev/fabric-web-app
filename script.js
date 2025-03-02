@@ -1,24 +1,55 @@
-// Update convertDropboxLink function to handle empty links better
-function convertDropboxLink(link) {
-    if (!link || link.trim() === '') {
-        console.log('No image link provided, skipping image');
-        return ''; // Return empty string for no image
+// Google Sheet JSON URL for "Sample Fabrics"
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1OaLsjBSqyZyGsqN-qnCh-JB4E0QfUlAX_5Rgam5pIkY/gviz/tq?tqx=out:json&sheet=Sample Fabrics';
+
+async function fetchFabrics() {
+    try {
+        console.log('Fetching data from:', SHEET_URL);
+        const response = await fetch(SHEET_URL);
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        const text = await response.text();
+        console.log('Raw response length:', text.length);
+
+        // Extract JSON from Google Sheets response
+        const json = JSON.parse(text.slice(47, -2));
+        const rows = json.table.rows;
+        const cols = json.table.cols; // Get column headers
+        console.log('Parsed rows:', rows);
+
+        // Map headers to indices dynamically
+        const headerMap = {};
+        cols.forEach((col, index) => {
+            headerMap[col.label] = index;
+        });
+
+        // Define all columns we care about
+        const allHeaders = ["SKU", "Type", "Name", "Family", "Colour", "Band Width", "Roll Width", "Schedule", "Status", "Image Link"];
+
+        // Map rows to fabric objects
+        const fabrics = rows.map(row => {
+            const fabric = {};
+            allHeaders.forEach(header => {
+                fabric[header] = row.c[headerMap[header]]?.v || '';
+            });
+            // No need for conversion, use the link as-is or empty string if missing
+            fabric.imageLink = fabric["Image Link"] || '';
+            return fabric;
+        });
+        console.log('Fabric data with image links:', fabrics);
+
+        displayFabrics(fabrics);
+        setupFilters(fabrics);
+    } catch (error) {
+        console.error('Error fetching fabrics:', error);
+        document.getElementById('fabricGrid').innerHTML = '<p>Error loading fabrics. Check console for details.</p>';
     }
-    if (link.includes('dropbox.com')) {
-        const directLink = link.replace('?dl=0', '?raw=1').replace('?dl=1', '?raw=1');
-        console.log('Converted Dropbox link:', directLink);
-        return directLink;
-    }
-    console.log('Using provided link as-is:', link);
-    return link;
 }
 
-// Update displayFabrics to skip image if no link
+// Display fabrics in grid
 function displayFabrics(fabrics) {
     const grid = document.getElementById('fabricGrid');
     grid.innerHTML = ''; // Clear existing content
 
-    if (fabrics.length === 0) {
+    if (fab.Student.length === 0) {
         grid.innerHTML = '<p>No fabrics found.</p>';
         return;
     }
@@ -49,7 +80,7 @@ function displayFabrics(fabrics) {
     });
 }
 
-// Update showFabricDetails to skip image if no link
+// Show fabric details on click
 function showFabricDetails(fabric) {
     const modal = document.createElement('div');
     modal.className = 'modal';
@@ -61,7 +92,7 @@ function showFabricDetails(fabric) {
     
     modal.innerHTML = `
         <div class="modal-content">
-            <span class="close">&times;</span>
+            <span class="close">×</span>
             ${imageHtml}
             <h2>${fabric.Name}</h2>
             <p><strong>SKU:</strong> ${fabric.SKU}</p>
@@ -82,7 +113,7 @@ function showFabricDetails(fabric) {
     });
 }
 
-// Update setupFilters function
+// Set up search and filter functionality
 function setupFilters(allFabrics) {
     const typeFilter = document.getElementById('typeFilter');
     const familyFilter = document.getElementById('familyFilter');
@@ -129,7 +160,7 @@ function setupFilters(allFabrics) {
                 (!selectedFamily || fabric.Family === selectedFamily) &&
                 (!selectedColour || fabric.Colour === selectedColour) &&
                 (!selectedBandWidth || bandWidthNum.toString() === selectedBandWidth) &&
-                (rollWidthValue === 0 || rollWidthNum >= rollWidthValue) && // Changed > to >=
+                (rollWidthValue === 0 || rollWidthNum >= rollWidthValue) &&
                 (!selectedSchedule || fabric.Schedule === selectedSchedule) &&
                 (!selectedStatus || fabric.Status === selectedStatus)
             );
@@ -146,3 +177,6 @@ function setupFilters(allFabrics) {
     scheduleFilter.addEventListener('change', filterFabrics);
     statusFilter.addEventListener('change', filterFabrics);
 }
+
+// Load fabrics when page loads
+fetchFabrics();
