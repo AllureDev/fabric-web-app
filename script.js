@@ -30,7 +30,7 @@ async function fetchFabrics() {
             allHeaders.forEach(header => {
                 fabric[header] = row.c[headerMap[header]]?.v || '';
             });
-            // No need for conversion, use the link as-is or empty string if missing
+            // Use the link as-is or empty string if missing
             fabric.imageLink = fabric["Image Link"] || '';
             return fabric;
         });
@@ -49,7 +49,8 @@ function displayFabrics(fabrics) {
     const grid = document.getElementById('fabricGrid');
     grid.innerHTML = ''; // Clear existing content
 
-    if (fab.Student.length === 0) {
+    // Fixed typo: 'fab.Student.length' to 'fabrics.length'
+    if (fabrics.length === 0) {
         grid.innerHTML = '<p>No fabrics found.</p>';
         return;
     }
