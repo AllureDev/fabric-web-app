@@ -181,7 +181,7 @@ function setupFilters(allFabrics) {
                 (!selectedFamily || fabric.Family === selectedFamily) &&
                 (!selectedColour || fabric.Colour === selectedColour) &&
                 (!selectedBandWidth || String(fabric["Band Width"]) === selectedBandWidth) &&
-                (rollWidthValue === 0 || rollWidthNum > rollWidthValue) &&
+                (rollWidthValue === 0 || rollWidthNum >= rollWidthValue) &&
                 (!selectedSchedule || fabric.Schedule === selectedSchedule) &&
                 (!selectedStatus || fabric.Status === selectedStatus)
             );
