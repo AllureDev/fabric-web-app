@@ -137,13 +137,16 @@ function setupFilters(allFabrics) {
     const scheduleFilter = document.getElementById('scheduleFilter');
     const statusFilter = document.getElementById('statusFilter');
 
-    // Populate filter options dynamically
-    const types = [...new Set(allFabrics.map(f => f.Type))];
-    const families = [...new Set(allFabrics.map(f => f.Family))];
-    const colours = [...new Set(allFabrics.map(f => f.Colour))];
-    const bandWidths = [...new Set(allFabrics.map(f => f["Band Width"]))];
-    const schedules = [...new Set(allFabrics.map(f => f.Schedule))];
-    const statuses = [...new Set(allFabrics.map(f => f.Status))];
+    // Log to debug
+    console.log('All Band Width values:', allFabrics.map(f => f["Band Width"]));
+
+    // Populate filter options dynamically with type safety
+    const types = [...new Set(allFabrics.map(f => String(f.Type || '')))];
+    const families = [...new Set(allFabrics.map(f => String(f.Family || '')))];
+    const colours = [...new Set(allFabrics.map(f => String(f.Colour || '')))];
+    const bandWidths = [...new Set(allFabrics.map(f => String(f["Band Width"] || '')))];
+    const schedules = [...new Set(allFabrics.map(f => String(f.Schedule || '')))];
+    const statuses = [...new Set(allFabrics.map(f => String(f.Status || '')))];
 
     typeFilter.innerHTML = '<option value="">All Types</option>' + types.map(t => `<option value="${t}">${t}</option>`).join('');
     familyFilter.innerHTML = '<option value="">All Families</option>' + families.map(f => `<option value="${f}">${f}</option>`).join('');
@@ -167,7 +170,7 @@ function setupFilters(allFabrics) {
                 (!selectedType || fabric.Type === selectedType) &&
                 (!selectedFamily || fabric.Family === selectedFamily) &&
                 (!selectedColour || fabric.Colour === selectedColour) &&
-                (!selectedBandWidth || fabric["Band Width"] === selectedBandWidth) &&
+                (!selectedBandWidth || String(fabric["Band Width"]) === selectedBandWidth) &&
                 (rollWidthValue === 0 || rollWidthNum > rollWidthValue) &&
                 (!selectedSchedule || fabric.Schedule === selectedSchedule) &&
                 (!selectedStatus || fabric.Status === selectedStatus)
