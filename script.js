@@ -30,8 +30,7 @@ async function fetchFabrics() {
             allHeaders.forEach(header => {
                 fabric[header] = row.c[headerMap[header]]?.v || '';
             });
-            // Use the link as-is or empty string if missing
-            fabric.imageLink = fabric["Image Link"] || '';
+            fabric.imageLink = convertDropboxLink(fabric["Image Link"]);
             return fabric;
         });
         console.log('Fabric data with image links:', fabrics);
@@ -44,39 +43,58 @@ async function fetchFabrics() {
     }
 }
 
+// Convert Dropbox shareable link to direct image URL
+function convertDropboxLink(link) {
+    if (!link) {
+        console.warn('No image link provided');
+        return 'https://via.placeholder.com/150?text=No+Image';
+    }
+    if (link.includes('dropbox.com')) {
+        const directLink = link.replace('?dl=0', '?raw=1').replace('?dl=1', '?raw=1');
+        console.log('Converted Dropbox link:', directLink);
+        return directLink;
+    }
+    console.log('Using provided link as-is:', link);
+    return link;
+}
+
 // Display fabrics in grid
 function displayFabrics(fabrics) {
     const grid = document.getElementById('fabricGrid');
     grid.innerHTML = ''; // Clear existing content
 
-    // Fixed typo: 'fab.Student.length' to 'fabrics.length'
     if (fabrics.length === 0) {
         grid.innerHTML = '<p>No fabrics found.</p>';
         return;
     }
 
     fabrics.forEach(fabric => {
+        // Create card
         const card = document.createElement('div');
         card.className = 'fabric-card';
 
-        // Only create and add image if there’s a valid link
-        if (fabric.imageLink) {
-            const img = document.createElement('img');
-            img.src = fabric.imageLink;
-            img.alt = fabric.Name;
-            img.onerror = () => {
-                console.error('Image failed to load:', fabric.imageLink);
-                img.remove(); // Remove broken image instead of showing placeholder
-            };
-            img.onload = () => console.log('Image loaded successfully:', fabric.imageLink);
-            card.appendChild(img);
-        }
+        // Create image
+        const img = document.createElement('img');
+        img.src = fabric.imageLink;
+        img.alt = fabric.Name;
+        img.onerror = () => {
+            console.error('Image failed to load:', fabric.imageLink);
+            img.src = 'https://via.placeholder.com/150?text=Image+Error';
+        };
+        img.onload = () => console.log('Image loaded successfully:', fabric.imageLink);
 
+        // Create name element
         const nameP = document.createElement('p');
         nameP.innerHTML = `<strong>${fabric.Name}</strong>`;
 
+        // Append elements to card
+        card.appendChild(img);
         card.appendChild(nameP);
+
+        // Add click event to show details
         card.addEventListener('click', () => showFabricDetails(fabric));
+
+        // Append card to grid
         grid.appendChild(card);
     });
 }
@@ -85,16 +103,10 @@ function displayFabrics(fabrics) {
 function showFabricDetails(fabric) {
     const modal = document.createElement('div');
     modal.className = 'modal';
-    
-    // Only include image HTML if there’s a link
-    const imageHtml = fabric.imageLink 
-        ? `<img src="${fabric.imageLink}" alt="${fabric.Name}" style="max-width:100%;">`
-        : '';
-    
     modal.innerHTML = `
         <div class="modal-content">
-            <span class="close">×</span>
-            ${imageHtml}
+            <span class="close">&times;</span>
+            <img src="${fabric.imageLink}" alt="${fabric.Name}" style="max-width:100%;">
             <h2>${fabric.Name}</h2>
             <p><strong>SKU:</strong> ${fabric.SKU}</p>
             <p><strong>Type:</strong> ${fabric.Type}</p>
@@ -108,6 +120,7 @@ function showFabricDetails(fabric) {
     `;
     document.body.appendChild(modal);
 
+    // Close modal on click
     modal.querySelector('.close').addEventListener('click', () => modal.remove());
     modal.addEventListener('click', (e) => {
         if (e.target === modal) modal.remove();
@@ -124,15 +137,11 @@ function setupFilters(allFabrics) {
     const scheduleFilter = document.getElementById('scheduleFilter');
     const statusFilter = document.getElementById('statusFilter');
 
-    // Parse band width to numbers, ignoring non-numeric parts
-    const bandWidths = [...new Set(allFabrics.map(f => {
-        const match = f["Band Width"].match(/^\d+(\.\d+)?/);
-        return match ? match[0] : '';
-    }).filter(Boolean))];
-
+    // Populate filter options dynamically
     const types = [...new Set(allFabrics.map(f => f.Type))];
     const families = [...new Set(allFabrics.map(f => f.Family))];
     const colours = [...new Set(allFabrics.map(f => f.Colour))];
+    const bandWidths = [...new Set(allFabrics.map(f => f["Band Width"]))];
     const schedules = [...new Set(allFabrics.map(f => f.Schedule))];
     const statuses = [...new Set(allFabrics.map(f => f.Status))];
 
@@ -154,14 +163,12 @@ function setupFilters(allFabrics) {
 
         const filtered = allFabrics.filter(fabric => {
             const rollWidthNum = parseFloat(fabric["Roll Width"]) || 0;
-            const bandWidthNum = parseFloat(fabric["Band Width"].match(/^\d+(\.\d+)?/)?.[0]) || 0;
-
             return (
                 (!selectedType || fabric.Type === selectedType) &&
                 (!selectedFamily || fabric.Family === selectedFamily) &&
                 (!selectedColour || fabric.Colour === selectedColour) &&
-                (!selectedBandWidth || bandWidthNum.toString() === selectedBandWidth) &&
-                (rollWidthValue === 0 || rollWidthNum >= rollWidthValue) &&
+                (!selectedBandWidth || fabric["Band Width"] === selectedBandWidth) &&
+                (rollWidthValue === 0 || rollWidthNum > rollWidthValue) &&
                 (!selectedSchedule || fabric.Schedule === selectedSchedule) &&
                 (!selectedStatus || fabric.Status === selectedStatus)
             );
