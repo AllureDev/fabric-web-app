@@ -12,18 +12,13 @@
         
         <!-- Search and Filter Controls -->
         <div class="controls">
-            <input type="text" id="searchInput" placeholder="Search by name...">
-            <select id="typeFilter">
-                <option value="">All Types</option>
-                <option value="Cotton">Cotton</option>
-                <option value="Silk">Silk</option>
-                <option value="Polyester">Polyester</option>
-            </select>
-            <select id="sizeFilter">
-                <option value="">All Sizes</option>
-                <option value="50x50">50x50</option>
-                <option value="1x2">1x2</option>
-            </select>
+            <select id="typeFilter"><option value="">Loading Types...</option></select>
+            <select id="familyFilter"><option value="">Loading Families...</option></select>
+            <select id="colourFilter"><option value="">Loading Colours...</option></select>
+            <select id="bandWidthFilter"><option value="">Loading Band Widths...</option></select>
+            <input type="number" id="rollWidthFilter" placeholder="Min Roll Width (cm)">
+            <select id="scheduleFilter"><option value="">Loading Schedules...</option></select>
+            <select id="statusFilter"><option value="">Loading Statuses...</option></select>
         </div>
 
         <!-- Fabric Grid -->
