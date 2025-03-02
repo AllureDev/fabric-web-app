@@ -1,5 +1,5 @@
-// Replace with your Google Sheet JSON URL
-const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1OaLsjBSqyZyGsqN-qnCh-JB4E0QfUlAX_5Rgam5pIkY/gviz/tq?tqx=out:json';
+// Google Sheet JSON URL for "Sample Fabrics"
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1OaLsjBSqyZyGsqN-qnCh-JB4E0QfUlAX_5Rgam5pIkY/gviz/tq?tqx=out:json&sheet=Sample Fabrics';
 
 async function fetchFabrics() {
     try {
@@ -12,15 +12,27 @@ async function fetchFabrics() {
         // Extract JSON from Google Sheets response
         const json = JSON.parse(text.slice(47, -2));
         const rows = json.table.rows;
+        const cols = json.table.cols; // Get column headers
         console.log('Parsed rows:', rows);
 
+        // Map headers to indices dynamically
+        const headerMap = {};
+        cols.forEach((col, index) => {
+            headerMap[col.label] = index;
+        });
+
+        // Define all columns we care about
+        const allHeaders = ["SKU", "Type", "Name", "Family", "Colour", "Band Width", "Roll Width", "Schedule", "Status", "Image Link"];
+
         // Map rows to fabric objects
-        const fabrics = rows.map(row => ({
-            name: row.c[0]?.v || 'Unnamed',
-            type: row.c[1]?.v || 'Unknown Type',
-            size: row.c[2]?.v || 'Unknown Size',
-            imageLink: convertDropboxLink(row.c[3]?.v || '')
-        }));
+        const fabrics = rows.map(row => {
+            const fabric = {};
+            allHeaders.forEach(header => {
+                fabric[header] = row.c[headerMap[header]]?.v || '';
+            });
+            fabric.imageLink = convertDropboxLink(fabric["Image Link"]);
+            return fabric;
+        });
         console.log('Fabric data with image links:', fabrics);
 
         displayFabrics(fabrics);
@@ -37,13 +49,11 @@ function convertDropboxLink(link) {
         console.warn('No image link provided');
         return 'https://via.placeholder.com/150?text=No+Image';
     }
-
     if (link.includes('dropbox.com')) {
         const directLink = link.replace('?dl=0', '?raw=1').replace('?dl=1', '?raw=1');
         console.log('Converted Dropbox link:', directLink);
         return directLink;
     }
-
     console.log('Using provided link as-is:', link);
     return link;
 }
@@ -62,70 +72,118 @@ function displayFabrics(fabrics) {
         // Create card
         const card = document.createElement('div');
         card.className = 'fabric-card';
-        card.style.cursor = 'pointer'; // Set cursor to hand
 
         // Create image
         const img = document.createElement('img');
         img.src = fabric.imageLink;
-        img.alt = fabric.name;
-        img.style.maxWidth = '100%'; // Ensure image fits card
+        img.alt = fabric.Name;
         img.onerror = () => {
             console.error('Image failed to load:', fabric.imageLink);
             img.src = 'https://via.placeholder.com/150?text=Image+Error';
         };
         img.onload = () => console.log('Image loaded successfully:', fabric.imageLink);
 
-        // Create text elements
+        // Create name element
         const nameP = document.createElement('p');
-        nameP.innerHTML = `<strong>Name:</strong> ${fabric.name}`;
-
-        const typeP = document.createElement('p');
-        typeP.innerHTML = `<strong>Type:</strong> ${fabric.type}`;
-
-        const sizeP = document.createElement('p');
-        sizeP.innerHTML = `<strong>Size:</strong> ${fabric.size}`;
+        nameP.innerHTML = `<strong>${fabric.Name}</strong>`;
 
         // Append elements to card
         card.appendChild(img);
         card.appendChild(nameP);
-        card.appendChild(typeP);
-        card.appendChild(sizeP);
 
-        // Add click event to open full-resolution image
-        card.addEventListener('click', () => {
-            console.log('Card clicked, opening:', fabric.imageLink);
-            window.open(fabric.imageLink, '_blank');
-        });
+        // Add click event to show details
+        card.addEventListener('click', () => showFabricDetails(fabric));
 
         // Append card to grid
         grid.appendChild(card);
     });
 }
 
+// Show fabric details on click
+function showFabricDetails(fabric) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <img src="${fabric.imageLink}" alt="${fabric.Name}" style="max-width:100%;">
+            <h2>${fabric.Name}</h2>
+            <p><strong>SKU:</strong> ${fabric.SKU}</p>
+            <p><strong>Type:</strong> ${fabric.Type}</p>
+            <p><strong>Family:</strong> ${fabric.Family}</p>
+            <p><strong>Colour:</strong> ${fabric.Colour}</p>
+            <p><strong>Band Width:</strong> ${fabric["Band Width"]}</p>
+            <p><strong>Roll Width:</strong> ${fabric["Roll Width"]}</p>
+            <p><strong>Schedule:</strong> ${fabric.Schedule}</p>
+            <p><strong>Status:</strong> ${fabric.Status}</p>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Close modal on click
+    modal.querySelector('.close').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+    });
+}
+
 // Set up search and filter functionality
 function setupFilters(allFabrics) {
-    const searchInput = document.getElementById('searchInput');
     const typeFilter = document.getElementById('typeFilter');
-    const sizeFilter = document.getElementById('sizeFilter');
+    const familyFilter = document.getElementById('familyFilter');
+    const colourFilter = document.getElementById('colourFilter');
+    const bandWidthFilter = document.getElementById('bandWidthFilter');
+    const rollWidthFilter = document.getElementById('rollWidthFilter');
+    const scheduleFilter = document.getElementById('scheduleFilter');
+    const statusFilter = document.getElementById('statusFilter');
+
+    // Populate filter options dynamically
+    const types = [...new Set(allFabrics.map(f => f.Type))];
+    const families = [...new Set(allFabrics.map(f => f.Family))];
+    const colours = [...new Set(allFabrics.map(f => f.Colour))];
+    const bandWidths = [...new Set(allFabrics.map(f => f["Band Width"]))];
+    const schedules = [...new Set(allFabrics.map(f => f.Schedule))];
+    const statuses = [...new Set(allFabrics.map(f => f.Status))];
+
+    typeFilter.innerHTML = '<option value="">All Types</option>' + types.map(t => `<option value="${t}">${t}</option>`).join('');
+    familyFilter.innerHTML = '<option value="">All Families</option>' + families.map(f => `<option value="${f}">${f}</option>`).join('');
+    colourFilter.innerHTML = '<option value="">All Colours</option>' + colours.map(c => `<option value="${c}">${c}</option>`).join('');
+    bandWidthFilter.innerHTML = '<option value="">All Band Widths</option>' + bandWidths.map(b => `<option value="${b}">${b}</option>`).join('');
+    scheduleFilter.innerHTML = '<option value="">All Schedules</option>' + schedules.map(s => `<option value="${s}">${s}</option>`).join('');
+    statusFilter.innerHTML = '<option value="">All Statuses</option>' + statuses.map(s => `<option value="${s}">${s}</option>`).join('');
 
     function filterFabrics() {
-        const searchText = searchInput.value.toLowerCase();
         const selectedType = typeFilter.value;
-        const selectedSize = sizeFilter.value;
+        const selectedFamily = familyFilter.value;
+        const selectedColour = colourFilter.value;
+        const selectedBandWidth = bandWidthFilter.value;
+        const rollWidthValue = parseFloat(rollWidthFilter.value) || 0;
+        const selectedSchedule = scheduleFilter.value;
+        const selectedStatus = statusFilter.value;
 
         const filtered = allFabrics.filter(fabric => {
-            const matchesSearch = fabric.name.toLowerCase().includes(searchText);
-            const matchesType = !selectedType || fabric.type === selectedType;
-            const matchesSize = !selectedSize || fabric.size === selectedSize;
-            return matchesSearch && matchesType && matchesSize;
+            const rollWidthNum = parseFloat(fabric["Roll Width"]) || 0;
+            return (
+                (!selectedType || fabric.Type === selectedType) &&
+                (!selectedFamily || fabric.Family === selectedFamily) &&
+                (!selectedColour || fabric.Colour === selectedColour) &&
+                (!selectedBandWidth || fabric["Band Width"] === selectedBandWidth) &&
+                (rollWidthValue === 0 || rollWidthNum > rollWidthValue) &&
+                (!selectedSchedule || fabric.Schedule === selectedSchedule) &&
+                (!selectedStatus || fabric.Status === selectedStatus)
+            );
         });
 
         displayFabrics(filtered);
     }
 
-    searchInput.addEventListener('input', filterFabrics);
     typeFilter.addEventListener('change', filterFabrics);
-    sizeFilter.addEventListener('change', filterFabrics);
+    familyFilter.addEventListener('change', filterFabrics);
+    colourFilter.addEventListener('change', filterFabrics);
+    bandWidthFilter.addEventListener('change', filterFabrics);
+    rollWidthFilter.addEventListener('input', filterFabrics);
+    scheduleFilter.addEventListener('change', filterFabrics);
+    statusFilter.addEventListener('change', filterFabrics);
 }
 
 // Load fabrics when page loads
