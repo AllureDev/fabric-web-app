@@ -14,42 +14,94 @@ body {
 
 h1 {
     color: #333;
+    font-size: 1.5em;
 }
 
 .controls {
     margin: 20px 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
 }
 
 #searchInput, select {
     padding: 10px;
-    margin: 0 10px;
+    margin: 0;
     font-size: 16px;
     border: 1px solid #ccc;
     border-radius: 4px;
+    width: 100%;
+    max-width: 300px;
+    box-sizing: border-box;
 }
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Larger cards on desktop */
     gap: 20px;
+    padding-bottom: 20px;
 }
 
 .fabric-card {
     background: white;
     border: 1px solid #ddd;
     border-radius: 8px;
-    padding: 10px;
+    padding: 15px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     text-align: center;
+    cursor: pointer !important;
+    transition: transform 0.2s;
+}
+
+.fabric-card:hover {
+    transform: scale(1.05);
 }
 
 .fabric-card img {
     max-width: 100%;
     height: auto;
     border-radius: 4px;
+    display: block;
 }
 
 .fabric-card p {
     margin: 5px 0;
     color: #555;
+    font-size: 1em;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 600px) {
+    h1 {
+        font-size: 1.2em;
+    }
+    .controls {
+        flex-direction: column;
+        align-items: center;
+    }
+    #searchInput, select {
+        width: 90%;
+        margin-bottom: 10px;
+    }
+    .grid {
+        display: flex; /* Switch to flexbox for vertical stacking */
+        flex-direction: column; /* Stack cards vertically */
+        max-height: calc(100vh - 200px); /* Fit to viewport height minus header/controls */
+        overflow-y: auto; /* Enable vertical scrolling */
+        gap: 10px; /* Smaller gap on mobile */
+        padding: 0 10px; /* Add side padding */
+    }
+    .fabric-card {
+        width: 100%; /* Full width on mobile */
+        padding: 10px;
+        margin: 0; /* Remove extra margins */
+    }
+    .fabric-card img {
+        max-height: 150px; /* Limit image height for consistency */
+        object-fit: cover; /* Crop if needed to fit */
+    }
+    .fabric-card p {
+        font-size: 0.8em; /* Smaller text */
+    }
 }
