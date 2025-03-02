@@ -28,8 +28,11 @@ async function fetchFabrics() {
         const fabrics = rows.map(row => {
             const fabric = {};
             allHeaders.forEach(header => {
-                fabric[header] = row.c[headerMap[header]]?.v || '';
+                // Use null coalescing to safely handle undefined values
+                const cellValue = row.c[headerMap[header]];
+                fabric[header] = cellValue?.v || '';
             });
+            // Process image link separately
             fabric.imageLink = sanitizeImageLink(fabric["Image Link"]);
             return fabric;
         });
@@ -45,23 +48,16 @@ async function fetchFabrics() {
 
 // Sanitize and validate image link (works with any direct URL)
 function sanitizeImageLink(link) {
-    if (!link) {
-        console.warn('No image link provided');
+    // Return a placeholder immediately if no link is provided
+    if (!link || typeof link !== 'string' || link.trim() === '') {
+        console.warn('No valid image link provided');
         return 'https://via.placeholder.com/150?text=No+Image';
     }
 
-    // Check if the link is a valid URL and likely an image
+    // Basic URL validation
     try {
         const url = new URL(link);
-        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-        const isImage = imageExtensions.some(ext => url.pathname.toLowerCase().endsWith(ext));
-        
-        if (!isImage) {
-            console.warn('Link may not be an image:', link);
-        }
-        
-        console.log('Using direct image link:', link);
-        return link;
+        return link; // Return the original link if it's a valid URL
     } catch (e) {
         console.error('Invalid URL provided:', link);
         return 'https://via.placeholder.com/150?text=Invalid+Link';
@@ -83,19 +79,24 @@ function displayFabrics(fabrics) {
         const card = document.createElement('div');
         card.className = 'fabric-card';
 
-        // Create image
+        // Create image - each image is handled independently
         const img = document.createElement('img');
-        img.src = fabric.imageLink;
-        img.alt = fabric.Name;
-        img.onerror = () => {
-            console.error('Image failed to load:', fabric.imageLink);
-            img.src = 'https://via.placeholder.com/150?text=Image+Error';
+        img.src = fabric.imageLink || 'https://via.placeholder.com/150?text=No+Image';
+        img.alt = fabric.Name || 'Fabric';
+        
+        // Handle image load errors individually
+        img.onerror = function() {
+            console.error('Image failed to load:', this.src);
+            this.src = 'https://via.placeholder.com/150?text=Image+Error';
         };
-        img.onload = () => console.log('Image loaded successfully:', fabric.imageLink);
+        
+        img.onload = function() {
+            console.log('Image loaded successfully:', this.src);
+        };
 
         // Create name element
         const nameP = document.createElement('p');
-        nameP.innerHTML = `<strong>${fabric.Name}</strong>`;
+        nameP.innerHTML = `<strong>${fabric.Name || 'Unnamed Fabric'}</strong>`;
 
         // Append elements to card
         card.appendChild(img);
@@ -116,16 +117,16 @@ function showFabricDetails(fabric) {
     modal.innerHTML = `
         <div class="modal-content">
             <span class="close">×</span>
-            <img src="${fabric.imageLink}" alt="${fabric.Name}" style="max-width:100%;">
-            <h2>${fabric.Name}</h2>
-            <p><strong>SKU:</strong> ${fabric.SKU}</p>
-            <p><strong>Type:</strong> ${fabric.Type}</p>
-            <p><strong>Family:</strong> ${fabric.Family}</p>
-            <p><strong>Colour:</strong> ${fabric.Colour}</p>
-            <p><strong>Band Width:</strong> ${fabric["Band Width"]}</p>
-            <p><strong>Roll Width:</strong> ${fabric["Roll Width"]}</p>
-            <p><strong>Schedule:</strong> ${fabric.Schedule}</p>
-            <p><strong>Status:</strong> ${fabric.Status}</p>
+            <img src="${fabric.imageLink}" alt="${fabric.Name}" style="max-width:100%;" onerror="this.src='https://via.placeholder.com/150?text=Image+Error'">
+            <h2>${fabric.Name || 'Unnamed Fabric'}</h2>
+            <p><strong>SKU:</strong> ${fabric.SKU || 'N/A'}</p>
+            <p><strong>Type:</strong> ${fabric.Type || 'N/A'}</p>
+            <p><strong>Family:</strong> ${fabric.Family || 'N/A'}</p>
+            <p><strong>Colour:</strong> ${fabric.Colour || 'N/A'}</p>
+            <p><strong>Band Width:</strong> ${fabric["Band Width"] || 'N/A'}</p>
+            <p><strong>Roll Width:</strong> ${fabric["Roll Width"] || 'N/A'}</p>
+            <p><strong>Schedule:</strong> ${fabric.Schedule || 'N/A'}</p>
+            <p><strong>Status:</strong> ${fabric.Status || 'N/A'}</p>
         </div>
     `;
     document.body.appendChild(modal);
@@ -151,12 +152,12 @@ function setupFilters(allFabrics) {
     console.log('All Band Width values:', allFabrics.map(f => f["Band Width"]));
 
     // Populate filter options dynamically with type safety
-    const types = [...new Set(allFabrics.map(f => String(f.Type || '')))];
-    const families = [...new Set(allFabrics.map(f => String(f.Family || '')))];
-    const colours = [...new Set(allFabrics.map(f => String(f.Colour || '')))];
-    const bandWidths = [...new Set(allFabrics.map(f => String(f["Band Width"] || '')))];
-    const schedules = [...new Set(allFabrics.map(f => String(f.Schedule || '')))];
-    const statuses = [...new Set(allFabrics.map(f => String(f.Status || '')))];
+    const types = [...new Set(allFabrics.map(f => String(f.Type || '')))].filter(Boolean);
+    const families = [...new Set(allFabrics.map(f => String(f.Family || '')))].filter(Boolean);
+    const colours = [...new Set(allFabrics.map(f => String(f.Colour || '')))].filter(Boolean);
+    const bandWidths = [...new Set(allFabrics.map(f => String(f["Band Width"] || '')))].filter(Boolean);
+    const schedules = [...new Set(allFabrics.map(f => String(f.Schedule || '')))].filter(Boolean);
+    const statuses = [...new Set(allFabrics.map(f => String(f.Status || '')))].filter(Boolean);
 
     typeFilter.innerHTML = '<option value="">All Types</option>' + types.map(t => `<option value="${t}">${t}</option>`).join('');
     familyFilter.innerHTML = '<option value="">All Families</option>' + families.map(f => `<option value="${f}">${f}</option>`).join('');
