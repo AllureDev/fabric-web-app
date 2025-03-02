@@ -32,35 +32,38 @@ async function fetchFabrics() {
                 const cellValue = row.c[headerMap[header]];
                 fabric[header] = cellValue?.v || '';
             });
-            // Process image link separately
-            fabric.imageLink = sanitizeImageLink(fabric["Image Link"]);
+            
+            // Check if image link exists and is valid
+            if (fabric["Image Link"] && typeof fabric["Image Link"] === 'string' && fabric["Image Link"].trim() !== '') {
+                try {
+                    // Basic URL validation
+                    new URL(fabric["Image Link"]);
+                    fabric.hasValidImage = true;
+                    fabric.imageLink = fabric["Image Link"];
+                } catch (e) {
+                    fabric.hasValidImage = false;
+                    console.warn('Invalid image URL for fabric:', fabric.Name);
+                }
+            } else {
+                fabric.hasValidImage = false;
+                console.warn('No image link provided for fabric:', fabric.Name);
+            }
+            
             return fabric;
         });
-        console.log('Fabric data with image links:', fabrics);
-
-        displayFabrics(fabrics);
-        setupFilters(fabrics);
+        
+        // Filter out fabrics without valid image links
+        const fabricsWithImages = fabrics.filter(fabric => fabric.hasValidImage);
+        
+        console.log('Fabrics with valid images:', fabricsWithImages.length, 'out of', fabrics.length);
+        
+        // Store all fabrics for filtering but only display those with images
+        window.allFabricData = fabrics;
+        displayFabrics(fabricsWithImages);
+        setupFilters(fabricsWithImages);
     } catch (error) {
         console.error('Error fetching fabrics:', error);
         document.getElementById('fabricGrid').innerHTML = '<p>Error loading fabrics. Check console for details.</p>';
-    }
-}
-
-// Sanitize and validate image link (works with any direct URL)
-function sanitizeImageLink(link) {
-    // Return a placeholder immediately if no link is provided
-    if (!link || typeof link !== 'string' || link.trim() === '') {
-        console.warn('No valid image link provided');
-        return 'https://via.placeholder.com/150?text=No+Image';
-    }
-
-    // Basic URL validation
-    try {
-        const url = new URL(link);
-        return link; // Return the original link if it's a valid URL
-    } catch (e) {
-        console.error('Invalid URL provided:', link);
-        return 'https://via.placeholder.com/150?text=Invalid+Link';
     }
 }
 
@@ -70,28 +73,28 @@ function displayFabrics(fabrics) {
     grid.innerHTML = ''; // Clear existing content
 
     if (fabrics.length === 0) {
-        grid.innerHTML = '<p>No fabrics found.</p>';
+        grid.innerHTML = '<p>No fabrics with images found.</p>';
         return;
     }
 
     fabrics.forEach(fabric => {
+        // Skip fabrics without valid images
+        if (!fabric.hasValidImage) return;
+        
         // Create card
         const card = document.createElement('div');
         card.className = 'fabric-card';
 
-        // Create image - each image is handled independently
+        // Create image
         const img = document.createElement('img');
-        img.src = fabric.imageLink || 'https://via.placeholder.com/150?text=No+Image';
+        img.src = fabric.imageLink;
         img.alt = fabric.Name || 'Fabric';
         
-        // Handle image load errors individually
+        // Handle image load errors
         img.onerror = function() {
-            console.error('Image failed to load:', this.src);
-            this.src = 'https://via.placeholder.com/150?text=Image+Error';
-        };
-        
-        img.onload = function() {
-            console.log('Image loaded successfully:', this.src);
+            console.error('Image failed to load despite validation:', this.src);
+            // Remove the card if the image fails to load
+            card.remove();
         };
 
         // Create name element
@@ -117,7 +120,7 @@ function showFabricDetails(fabric) {
     modal.innerHTML = `
         <div class="modal-content">
             <span class="close">×</span>
-            <img src="${fabric.imageLink}" alt="${fabric.Name}" style="max-width:100%;" onerror="this.src='https://via.placeholder.com/150?text=Image+Error'">
+            <img src="${fabric.imageLink}" alt="${fabric.Name}" style="max-width:100%;">
             <h2>${fabric.Name || 'Unnamed Fabric'}</h2>
             <p><strong>SKU:</strong> ${fabric.SKU || 'N/A'}</p>
             <p><strong>Type:</strong> ${fabric.Type || 'N/A'}</p>
@@ -139,7 +142,7 @@ function showFabricDetails(fabric) {
 }
 
 // Set up search and filter functionality
-function setupFilters(allFabrics) {
+function setupFilters(fabricsWithImages) {
     const typeFilter = document.getElementById('typeFilter');
     const familyFilter = document.getElementById('familyFilter');
     const colourFilter = document.getElementById('colourFilter');
@@ -148,16 +151,13 @@ function setupFilters(allFabrics) {
     const scheduleFilter = document.getElementById('scheduleFilter');
     const statusFilter = document.getElementById('statusFilter');
 
-    // Log to debug
-    console.log('All Band Width values:', allFabrics.map(f => f["Band Width"]));
-
-    // Populate filter options dynamically with type safety
-    const types = [...new Set(allFabrics.map(f => String(f.Type || '')))].filter(Boolean);
-    const families = [...new Set(allFabrics.map(f => String(f.Family || '')))].filter(Boolean);
-    const colours = [...new Set(allFabrics.map(f => String(f.Colour || '')))].filter(Boolean);
-    const bandWidths = [...new Set(allFabrics.map(f => String(f["Band Width"] || '')))].filter(Boolean);
-    const schedules = [...new Set(allFabrics.map(f => String(f.Schedule || '')))].filter(Boolean);
-    const statuses = [...new Set(allFabrics.map(f => String(f.Status || '')))].filter(Boolean);
+    // Populate filter options dynamically with type safety - only using fabrics with images
+    const types = [...new Set(fabricsWithImages.map(f => String(f.Type || '')))].filter(Boolean);
+    const families = [...new Set(fabricsWithImages.map(f => String(f.Family || '')))].filter(Boolean);
+    const colours = [...new Set(fabricsWithImages.map(f => String(f.Colour || '')))].filter(Boolean);
+    const bandWidths = [...new Set(fabricsWithImages.map(f => String(f["Band Width"] || '')))].filter(Boolean);
+    const schedules = [...new Set(fabricsWithImages.map(f => String(f.Schedule || '')))].filter(Boolean);
+    const statuses = [...new Set(fabricsWithImages.map(f => String(f.Status || '')))].filter(Boolean);
 
     typeFilter.innerHTML = '<option value="">All Types</option>' + types.map(t => `<option value="${t}">${t}</option>`).join('');
     familyFilter.innerHTML = '<option value="">All Families</option>' + families.map(f => `<option value="${f}">${f}</option>`).join('');
@@ -175,7 +175,8 @@ function setupFilters(allFabrics) {
         const selectedSchedule = scheduleFilter.value;
         const selectedStatus = statusFilter.value;
 
-        const filtered = allFabrics.filter(fabric => {
+        // Only filter fabrics that have valid images
+        const filtered = fabricsWithImages.filter(fabric => {
             const rollWidthNum = parseFloat(fabric["Roll Width"]) || 0;
             // Extract numeric part from Band Width (e.g., "3 Thick" -> "3")
             const bandWidthValue = fabric["Band Width"] ? String(fabric["Band Width"]).match(/^\d+/)?.[0] || '' : '';
