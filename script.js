@@ -47,13 +47,12 @@ async function fetchFabrics() {
                 const cellValue = row.c[headerMap[header]];
                 let value = cellValue?.v || '';
                 
-                // Handle "Band Width" with improved parsing for decimals
                 if (header === "Band Width" && value !== '') {
                     const stringValue = String(value);
-                    // Match numbers with optional decimal places (e.g., "3", "3.5", "4.75")
                     const numericMatch = stringValue.match(/^\d+(\.\d+)?/);
                     const numericValue = numericMatch ? parseFloat(numericMatch[0]) : '';
-                    fabric[header] = numericValue; // Store as number or empty string if no match
+                    console.log(`Parsed Band Width for ${fabric.Name || 'Unnamed'}: "${value}" -> ${numericValue}`);
+                    fabric[header] = numericValue;
                 } else {
                     fabric[header] = value;
                 }
@@ -175,7 +174,7 @@ function showFabricDetails(fabric) {
             <p><strong>Type:</strong> ${fabric.Type || 'N/A'}</p>
             <p><strong>Family:</strong> ${fabric.Family || 'N/A'}</p>
             <p><strong>Colour:</strong> ${fabric.Colour || 'N/A'}</p>
-            <p><strong>Band Width:</strong> ${(fabric["Band Width"] !== '' && fabric["Band Width"] !== undefined && fabric["Band Width"] !== null) ? fabric["Band Width"] : 'N/A'}</p>
+            <p><strong>Band Width:</strong> ${fabric["Band Width"] != null && fabric["Band Width"] !== '' ? fabric["Band Width"] : 'N/A'}</p>
             <p><strong>Roll Width:</strong> ${fabric["Roll Width"] || 'N/A'}</p>
             <p><strong>Schedule:</strong> ${fabric.Schedule || 'N/A'}</p>
             <p><strong>Status:</strong> ${fabric.Status || 'N/A'}</p>
@@ -214,11 +213,10 @@ function setupFilters(fabricsWithImages) {
     const filterValues = {};
     filters.forEach(f => {
         if (f.key === 'Band Width') {
-            // For Band Width, use unique numerical values as numbers
             filterValues[f.id] = [...new Set(fabricsWithImages
                 .map(fabric => fabric[f.key])
                 .filter(v => v !== '' && !isNaN(v)))]
-                .sort((a, b) => a - b); // Sort numerically
+                .sort((a, b) => a - b);
         } else {
             filterValues[f.id] = [...new Set(fabricsWithImages.map(fabric => String(fabric[f.key] || '')))].filter(Boolean);
         }
@@ -289,8 +287,8 @@ function setupFilters(fabricsWithImages) {
 
         const filtered = fabricsWithImages.filter(fabric => {
             const rollWidthNum = parseFloat(fabric["Roll Width"]) || 0;
-            const bandWidthValue = fabric["Band Width"]; // Numeric from fetchFabrics
-            
+            const bandWidthValue = fabric["Band Width"];
+            console.log(`Filtering ${fabric.Name}: Band Width = ${bandWidthValue}, Type = ${typeof bandWidthValue}`);
             const nameMatch = fabric.Name.toLowerCase().includes(searchTerm) || fabric.SKU.toLowerCase().includes(searchTerm);
 
             return (
