@@ -175,7 +175,7 @@ function showFabricDetails(fabric) {
             <p><strong>Type:</strong> ${fabric.Type || 'N/A'}</p>
             <p><strong>Family:</strong> ${fabric.Family || 'N/A'}</p>
             <p><strong>Colour:</strong> ${fabric.Colour || 'N/A'}</p>
-            <p><strong>Band Width:</strong> ${fabric["Band Width"] !== '' ? fabric["Band Width"] : 'N/A'}</p>
+            <p><strong>Band Width:</strong> ${(fabric["Band Width"] !== '' && fabric["Band Width"] !== undefined && fabric["Band Width"] !== null) ? fabric["Band Width"] : 'N/A'}</p>
             <p><strong>Roll Width:</strong> ${fabric["Roll Width"] || 'N/A'}</p>
             <p><strong>Schedule:</strong> ${fabric.Schedule || 'N/A'}</p>
             <p><strong>Status:</strong> ${fabric.Status || 'N/A'}</p>
