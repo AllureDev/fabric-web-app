@@ -202,41 +202,54 @@ function showFabricDetails(fabric) {
     };
 
     // Magnifier Logic
-    function updateMagnifier(e, clientX, clientY) {
-        if (!isImageLoaded) return;
+function updateMagnifier(e, clientX, clientY) {
+    if (!isImageLoaded) return;
 
-        const rect = modalImg.getBoundingClientRect();
-        const imgWidth = modalImg.offsetWidth;
-        const imgHeight = modalImg.offsetHeight;
-        const mouseX = clientX - rect.left;
-        const mouseY = clientY - rect.top;
+    const rect = modalImg.getBoundingClientRect();
+    const imgWidth = modalImg.offsetWidth;
+    const imgHeight = modalImg.offsetHeight;
+    const mouseX = clientX - rect.left;
+    const mouseY = clientY - rect.top;
 
-        if (mouseX < 0 || mouseY < 0 || mouseX > imgWidth || mouseY > imgHeight) {
-            magnifier.style.display = 'none';
-            return;
-        }
-
-        magnifier.style.display = 'block';
-
-        const magWidth = magnifier.offsetWidth;
-        const magHeight = magnifier.offsetHeight;
-        const zoomFactor = 4;
-
-        let magX = mouseX - magWidth / 2;
-        let magY = mouseY - magHeight / 2;
-
-        magX = Math.max(0, Math.min(magX, imgWidth - magWidth));
-        magY = Math.max(0, Math.min(magY, imgHeight - magHeight));
-
-        magnifier.style.left = `${magX}px`;
-        magnifier.style.top = `${magY}px`;
-
-        const bgX = -((mouseX / imgWidth) * (imgWidth * zoomFactor) - magWidth / 2);
-        const bgY = -((mouseY / imgHeight) * (imgHeight * zoomFactor) - magHeight / 2);
-        magnifier.style.backgroundImage = `url('${modalImg.src}')`;
-        magnifier.style.backgroundPosition = `${bgX}px ${bgY}px`;
-        magnifier.style.backgroundSize = `${imgWidth * zoomFactor}px ${imgHeight * zoomFactor}px`;
+    if (mouseX < 0 || mouseY < 0 || mouseX > imgWidth || mouseY > imgHeight) {
+        magnifier.style.display = 'none';
+        return;
     }
+
+    magnifier.style.display = 'block';
+
+    // Dynamically calculate magnifier size as a percentage of the image
+    const sizePercentage = 0.2; // 20% of the image size (adjust as needed)
+    let magWidth = imgWidth * sizePercentage;
+    let magHeight = imgHeight * sizePercentage;
+
+    // Enforce minimum and maximum sizes
+    const minSize = 100; // Minimum size in pixels
+    const maxSize = 300; // Maximum size in pixels
+    magWidth = Math.max(minSize, Math.min(maxSize, magWidth));
+    magHeight = Math.max(minSize, Math.min(maxSize, magHeight));
+
+    // Apply the calculated size to the magnifier
+    magnifier.style.width = `${magWidth}px`;
+    magnifier.style.height = `${magHeight}px`;
+
+    const zoomFactor = 2;
+
+    let magX = mouseX - magWidth / 2;
+    let magY = mouseY - magHeight / 2;
+
+    magX = Math.max(0, Math.min(magX, imgWidth - magWidth));
+    magY = Math.max(0, Math.min(magY, imgHeight - magHeight));
+
+    magnifier.style.left = `${magX}px`;
+    magnifier.style.top = `${magY}px`;
+
+    const bgX = -((mouseX / imgWidth) * (imgWidth * zoomFactor) - magWidth / 2);
+    const bgY = -((mouseY / imgHeight) * (imgHeight * zoomFactor) - magHeight / 2);
+    magnifier.style.backgroundImage = `url('${modalImg.src}')`;
+    magnifier.style.backgroundPosition = `${bgX}px ${bgY}px`;
+    magnifier.style.backgroundSize = `${imgWidth * zoomFactor}px ${imgHeight * zoomFactor}px`;
+}
 
     // Mouse Events
     imageWrapper.addEventListener('mousemove', (e) => {
