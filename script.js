@@ -156,22 +156,29 @@ function setupFilters(fabricsWithImages) {
     const schedules = [...new Set(fabricsWithImages.map(f => String(f.Schedule || '')))].filter(Boolean);
     const statuses = [...new Set(fabricsWithImages.map(f => String(f.Status || '')))].filter(Boolean);
 
-    typeFilter.innerHTML = '<option value="">All Types</option>' + types.map(t => `<option value="${t}">${t}</option>`).join('');
-    familyFilter.innerHTML = '<option value="">All Families</option>' + families.map(f => `<option value="${f}">${f}</option>`).join('');
-    colourFilter.innerHTML = '<option value="">All Colours</option>' + colours.map(c => `<option value="${c}">${c}</option>`).join('');
-    bandWidthFilter.innerHTML = '<option value="">All Band Widths</option>' + bandWidths.map(b => `<option value="${b}">${b}</option>`).join('');
-    scheduleFilter.innerHTML = '<option value="">All Schedules</option>' + schedules.map(s => `<option value="${s}">${s}</option>`).join('');
-    statusFilter.innerHTML = '<option value="">All Statuses</option>' + statuses.map(s => `<option value="${s}">${s}</option>`).join('');
+    typeFilter.multiple = true;
+    familyFilter.multiple = true;
+    colourFilter.multiple = true;
+    bandWidthFilter.multiple = true;
+    scheduleFilter.multiple = true;
+    statusFilter.multiple = true;
+
+    typeFilter.innerHTML = types.map(t => `<option value="${t}">${t}</option>`).join('');
+    familyFilter.innerHTML = families.map(f => `<option value="${f}">${f}</option>`).join('');
+    colourFilter.innerHTML = colours.map(c => `<option value="${c}">${c}</option>`).join('');
+    bandWidthFilter.innerHTML = bandWidths.map(b => `<option value="${b}">${b}</option>`).join('');
+    scheduleFilter.innerHTML = schedules.map(s => `<option value="${s}">${s}</option>`).join('');
+    statusFilter.innerHTML = statuses.map(s => `<option value="${s}">${s}</option>`).join('');
 
     function filterFabrics() {
         const searchTerm = searchInput.value.toLowerCase();
-        const selectedType = typeFilter.value;
-        const selectedFamily = familyFilter.value;
-        const selectedColour = colourFilter.value;
-        const selectedBandWidth = bandWidthFilter.value;
+        const selectedTypes = Array.from(typeFilter.selectedOptions).map(opt => opt.value);
+        const selectedFamilies = Array.from(familyFilter.selectedOptions).map(opt => opt.value);
+        const selectedColours = Array.from(colourFilter.selectedOptions).map(opt => opt.value);
+        const selectedBandWidths = Array.from(bandWidthFilter.selectedOptions).map(opt => opt.value);
         const rollWidthValue = parseFloat(rollWidthFilter.value) || 0;
-        const selectedSchedule = scheduleFilter.value;
-        const selectedStatus = statusFilter.value;
+        const selectedSchedules = Array.from(scheduleFilter.selectedOptions).map(opt => opt.value);
+        const selectedStatuses = Array.from(statusFilter.selectedOptions).map(opt => opt.value);
 
         const filtered = fabricsWithImages.filter(fabric => {
             const rollWidthNum = parseFloat(fabric["Roll Width"]) || 0;
@@ -180,13 +187,13 @@ function setupFilters(fabricsWithImages) {
 
             return (
                 nameMatch &&
-                (!selectedType || fabric.Type === selectedType) &&
-                (!selectedFamily || fabric.Family === selectedFamily) &&
-                (!selectedColour || fabric.Colour === selectedColour) &&
-                (!selectedBandWidth || bandWidthValue === selectedBandWidth) &&
+                (selectedTypes.length === 0 || selectedTypes.includes(fabric.Type)) &&
+                (selectedFamilies.length === 0 || selectedFamilies.includes(fabric.Family)) &&
+                (selectedColours.length === 0 || selectedColours.includes(fabric.Colour)) &&
+                (selectedBandWidths.length === 0 || selectedBandWidths.includes(bandWidthValue)) &&
                 (rollWidthValue === 0 || rollWidthNum >= rollWidthValue) &&
-                (!selectedSchedule || fabric.Schedule === selectedSchedule) &&
-                (!selectedStatus || fabric.Status === selectedStatus)
+                (selectedSchedules.length === 0 || selectedSchedules.includes(fabric.Schedule)) &&
+                (selectedStatuses.length === 0 || selectedStatuses.includes(fabric.Status))
             );
         });
 
@@ -195,13 +202,13 @@ function setupFilters(fabricsWithImages) {
 
     function resetAllFilters() {
         searchInput.value = '';
-        typeFilter.value = '';
-        familyFilter.value = '';
-        colourFilter.value = '';
-        bandWidthFilter.value = '';
+        typeFilter.selectedIndex = -1;
+        familyFilter.selectedIndex = -1;
+        colourFilter.selectedIndex = -1;
+        bandWidthFilter.selectedIndex = -1;
         rollWidthFilter.value = '';
-        scheduleFilter.value = '';
-        statusFilter.value = '';
+        scheduleFilter.selectedIndex = -1;
+        statusFilter.selectedIndex = -1;
         filterFabrics();
     }
 
@@ -222,41 +229,50 @@ function setupFilterButton() {
     const filterBtn = document.getElementById('filterBtn');
     const filterControls = document.getElementById('filterControls');
     let isHidden = false;
+    let lastShownPosition = 0;
+    const BUFFER_ZONE = 200; // Pixels of scroll buffer before hiding
 
-    window.addEventListener('scroll', () => {
+    const debouncedScrollHandler = debounce(() => {
         const scrollPosition = window.scrollY;
         const headerHeight = document.querySelector('h1').offsetHeight;
         const controlsHeight = filterControls.offsetHeight;
 
-        if (scrollPosition > (headerHeight + controlsHeight) && !isHidden) {
+        if (!isHidden && scrollPosition > (headerHeight + controlsHeight)) {
             filterControls.classList.add('hidden');
-            filterControls.style.visibility = 'hidden';
             filterBtn.style.display = 'flex';
             isHidden = true;
-        } else if (scrollPosition <= (headerHeight + controlsHeight) && isHidden) {
+        } else if (isHidden && scrollPosition <= headerHeight) {
             filterControls.classList.remove('hidden');
-            filterControls.style.visibility = 'visible';
+            filterControls.style.position = 'sticky';
+            filterControls.style.top = '0';
+            filterControls.style.opacity = '1';
             filterBtn.style.display = 'none';
             isHidden = false;
+        } else if (!isHidden && Math.abs(scrollPosition - lastShownPosition) > BUFFER_ZONE) {
+            filterControls.classList.add('hidden');
+            filterBtn.style.display = 'flex';
+            isHidden = true;
         }
-    });
+    }, 100);
+
+    window.addEventListener('scroll', debouncedScrollHandler);
 
     filterBtn.addEventListener('click', () => {
         if (isHidden) {
             const scrollPosition = window.scrollY;
             filterControls.classList.remove('hidden');
-            filterControls.style.visibility = 'visible';
             filterControls.style.position = 'absolute';
-            filterControls.style.top = `${scrollPosition + 10}px`; // 10px offset from current position
+            filterControls.style.top = `${scrollPosition + 10}px`;
             filterControls.style.left = '50%';
             filterControls.style.transform = 'translateX(-50%)';
+            filterControls.style.opacity = '1';
+            filterControls.style.width = 'calc(100% - 2rem)';
+            filterControls.style.maxWidth = '1400px';
             filterBtn.style.display = 'none';
             isHidden = false;
+            lastShownPosition = scrollPosition;
         } else {
             filterControls.classList.add('hidden');
-            filterControls.style.visibility = 'hidden';
-            filterControls.style.position = 'sticky';
-            filterControls.style.top = '0';
             filterBtn.style.display = 'flex';
             isHidden = true;
         }
