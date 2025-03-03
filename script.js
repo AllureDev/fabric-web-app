@@ -90,10 +90,17 @@ function displayFabrics(fabrics, isFilterUpdate = false) {
     const observer = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                const img = entry.target;
+                const imageContainer = entry.target;
+                const img = imageContainer.querySelector('img');
                 img.src = img.dataset.src;
-                img.classList.remove('placeholder');
-                observer.unobserve(img);
+                img.onload = () => {
+                    imageContainer.classList.add('loaded');
+                };
+                img.onerror = () => {
+                    console.error('Image failed to load:', img.src);
+                    // Optionally show an error icon
+                };
+                observer.unobserve(imageContainer);
             }
         });
     }, { rootMargin: '0px 0px 200px 0px' });
@@ -107,30 +114,44 @@ function displayFabrics(fabrics, isFilterUpdate = false) {
             card.classList.add('low-stock');
         }
 
+        // Create image container
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'image-container';
+
+        // Create placeholder with shimmer effect
+        const placeholder = document.createElement('div');
+        placeholder.className = 'placeholder shimmer';
+
+        // Create image element
         const img = document.createElement('img');
         img.alt = fabric.Name || 'Fabric';
+        img.style.opacity = '0'; // Initially hidden with opacity
+
         if (isFilterUpdate) {
+            // For filter updates, load image directly
             img.src = fabric.imageLink;
+            img.onload = () => {
+                imageContainer.classList.add('loaded');
+            };
+            img.onerror = () => {
+                console.error('Image failed to load:', img.src);
+            };
         } else {
-            img.src = PLACEHOLDER_IMAGE;
+            // For initial load, use lazy loading
             img.dataset.src = fabric.imageLink;
-            img.className = 'placeholder';
-            observer.observe(img);
+            observer.observe(imageContainer);
         }
 
-        img.onerror = function() {
-            console.error('Image failed to load:', this.src || this.dataset.src);
-            this.src = PLACEHOLDER_IMAGE;
-        };
+        // Assemble the card
+        imageContainer.appendChild(placeholder);
+        imageContainer.appendChild(img);
+        card.appendChild(imageContainer);
 
         const nameP = document.createElement('p');
         nameP.innerHTML = `<strong>${fabric.Name || 'Unnamed Fabric'}</strong>`;
-
-        card.appendChild(img);
         card.appendChild(nameP);
 
         card.addEventListener('click', () => showFabricDetails(fabric));
-
         grid.appendChild(card);
     });
 }
