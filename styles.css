@@ -320,7 +320,6 @@ h1 {
     opacity: 1;
 }
 
-/* Ensure images are visible even if loaded class is delayed */
 .fabric-card img[src] {
     opacity: 1;
 }
@@ -348,19 +347,18 @@ h1 {
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    padding: 2rem; /* Increased padding for more clickable space */
+    padding: 2rem;
 }
 
 .modal-content {
     background: #fff;
     border-radius: 12px;
-    padding: 1rem;
+    padding: 1.5rem;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     animation: slideIn 0.3s ease;
+    max-width: min(90vw, 900px);
+    width: 100%;
     position: relative;
-    max-width: min(90vw, 800px); /* Cap max width */
-    width: auto;
-    display: inline-block; /* Fit to content */
 }
 
 @keyframes slideIn {
@@ -368,18 +366,30 @@ h1 {
     to { transform: translateY(0); opacity: 1; }
 }
 
+.modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.modal-image-section {
+    display: flex;
+    flex-direction: column;
+}
+
 .modal-image-wrapper {
+    position: relative;
     width: 100%;
-    margin-bottom: 0.5rem;
 }
 
 .modal-content img {
     width: 100%;
     height: auto;
-    max-height: 60vh; /* Reduced from 80vh to ensure space */
+    max-height: 60vh;
     object-fit: contain;
     border-radius: 8px;
-    display: block;
+    border: 1px solid #edf2f7;
 }
 
 .magnifier {
@@ -397,39 +407,75 @@ h1 {
     background-size: 400%;
 }
 
+.modal-details-section {
+    padding: 0.5rem;
+}
+
+.modal-content h2 {
+    font-size: 1.5rem;
+    color: #2b6cb0;
+    margin: 0 0 1rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+}
+
+.detail-item {
+    display: grid;
+    grid-template-columns: 24px auto 1fr;
+    align-items: center;
+    padding: 0.5rem;
+    background: #f7fafc;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+
+.detail-item:hover {
+    background: #edf2f7;
+}
+
+.detail-item i {
+    color: #2b6cb0;
+    font-size: 1.1rem;
+    margin-right: 0.5rem;
+}
+
+.detail-item strong {
+    font-weight: 500;
+    color: #2d3748;
+    margin-right: 0.75rem;
+}
+
+.detail-item span {
+    color: #4a5568;
+    font-size: 0.95rem;
+}
+
+.low-stock-text {
+    color: #e53e3e;
+    font-weight: 600;
+}
+
 .close {
     position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    font-size: 1.5rem;
+    top: 0.75rem;
+    right: 0.75rem;
+    font-size: 1.75rem;
     color: #718096;
     cursor: pointer;
     padding: 0.25rem;
-    transition: color 0.2s;
+    transition: color 0.2s, transform 0.2s;
 }
 
 .close:hover {
     color: #2d3748;
-}
-
-.modal-content h2 {
-    font-size: 1.25rem;
-    color: #2b6cb0;
-    margin: 0.5rem 0 0.25rem;
-}
-
-/* Condensed text layout */
-.modal-content .details {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 0.25rem 1rem;
-    font-size: 0.9rem;
-    color: #4a5568;
-}
-
-.modal-content .details strong {
-    font-weight: 500;
-    color: #2d3748;
+    transform: scale(1.1);
 }
 
 /* Mobile Styles */
@@ -480,21 +526,30 @@ h1 {
         padding: 1rem;
     }
 
+    .modal-grid {
+        grid-template-columns: 1fr;
+    }
+
     .modal-content {
+        padding: 1rem;
         max-width: 95vw;
-        padding: 0.75rem;
+    }
+
+    .modal-content h2 {
+        font-size: 1.25rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .detail-item {
+        padding: 0.4rem;
+        font-size: 0.9rem;
+    }
+
+    .detail-item i {
+        font-size: 1rem;
     }
 
     .modal-content img {
         max-height: 50vh;
-    }
-
-    .modal-content h2 {
-        font-size: 1.1rem;
-    }
-
-    .modal-content .details {
-        font-size: 0.85rem;
-        gap: 0.2rem 0.75rem;
     }
 }
