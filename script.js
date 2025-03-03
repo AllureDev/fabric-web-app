@@ -47,9 +47,11 @@ async function fetchFabrics() {
                 const cellValue = row.c[headerMap[header]];
                 let value = cellValue?.v || '';
                 
-                // Extract numerical value from "Band Width"
-                if (header === "Band Width" && value) {
-                    const numericValue = value.match(/^\d+/)?.[0] || ''; // Extract leading number
+                // Handle "Band Width" with type safety
+                if (header === "Band Width" && value !== '') {
+                    // Convert value to string and extract leading number
+                    const stringValue = String(value); // Ensure it's a string
+                    const numericValue = stringValue.match(/^\d+/)?.[0] || '';
                     fabric[header] = numericValue; // Store only the number
                 } else {
                     fabric[header] = value;
