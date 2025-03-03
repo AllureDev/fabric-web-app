@@ -346,19 +346,20 @@ h1 {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
-    padding: 2rem;
+    padding: clamp(1rem, 2vw, 2rem); /* Dynamic padding */
 }
 
 .modal-content {
     background: #fff;
     border-radius: 12px;
-    padding: 1.5rem;
+    padding: clamp(1rem, 1.5vw, 1.5rem); /* Dynamic padding */
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     animation: slideIn 0.3s ease;
-    max-width: min(90vw, 900px);
-    width: 100%;
-    position: relative;
+    width: min(90vw, 900px); /* Smaller of 90vw or 900px */
+    height: auto;
+    max-height: min(90vh, 800px); /* Smaller of 90vh or 800px */
+    overflow-y: auto;
+    aspect-ratio: 1.5 / 1; /* Maintains a wider-than-tall feel on web */
 }
 
 @keyframes slideIn {
@@ -522,34 +523,24 @@ h1 {
         height: 180px;
     }
 
-    .modal {
-        padding: 1rem;
+    .modal-content {
+        width: min(95vw, 450px); /* Tighter for mobile */
+        max-height: min(85vh, 600px);
+        aspect-ratio: auto; /* Remove aspect ratio on mobile */
     }
 
     .modal-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .modal-content {
-        padding: 1rem;
-        max-width: 95vw;
-    }
-
-    .modal-content h2 {
-        font-size: 1.25rem;
-        margin-bottom: 0.75rem;
-    }
-
-    .detail-item {
-        padding: 0.4rem;
-        font-size: 0.9rem;
-    }
-
-    .detail-item i {
-        font-size: 1rem;
+        grid-template-columns: 1fr; /* Stack on mobile */
     }
 
     .modal-content img {
-        max-height: 50vh;
+        max-height: 40vh; /* Reduce image height on mobile */
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-content {
+        width: min(95vw, 320px); /* Very small screens */
+        max-height: min(80vh, 500px);
     }
 }
