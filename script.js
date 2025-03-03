@@ -230,10 +230,12 @@ function setupFilterButton() {
 
         if (scrollPosition > (headerHeight + controlsHeight) && !isHidden) {
             filterControls.classList.add('hidden');
+            filterControls.style.visibility = 'hidden';
             filterBtn.style.display = 'flex';
             isHidden = true;
         } else if (scrollPosition <= (headerHeight + controlsHeight) && isHidden) {
             filterControls.classList.remove('hidden');
+            filterControls.style.visibility = 'visible';
             filterBtn.style.display = 'none';
             isHidden = false;
         }
@@ -241,10 +243,22 @@ function setupFilterButton() {
 
     filterBtn.addEventListener('click', () => {
         if (isHidden) {
+            const scrollPosition = window.scrollY;
             filterControls.classList.remove('hidden');
+            filterControls.style.visibility = 'visible';
+            filterControls.style.position = 'absolute';
+            filterControls.style.top = `${scrollPosition + 10}px`; // 10px offset from current position
+            filterControls.style.left = '50%';
+            filterControls.style.transform = 'translateX(-50%)';
             filterBtn.style.display = 'none';
             isHidden = false;
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            filterControls.classList.add('hidden');
+            filterControls.style.visibility = 'hidden';
+            filterControls.style.position = 'sticky';
+            filterControls.style.top = '0';
+            filterBtn.style.display = 'flex';
+            isHidden = true;
         }
     });
 
