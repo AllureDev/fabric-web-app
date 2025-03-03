@@ -22,22 +22,18 @@ async function fetchFabrics() {
         const text = await response.text();
         console.log('Raw response length:', text.length);
 
-        // Extract JSON from Google Sheets response
         const json = JSON.parse(text.slice(47, -2));
         const rows = json.table.rows;
         const cols = json.table.cols;
         console.log('Parsed rows:', rows);
 
-        // Map headers to indices dynamically
         const headerMap = {};
         cols.forEach((col, index) => {
             headerMap[col.label] = index;
         });
 
-        // Define all columns we care about, including Ordering Status
         const allHeaders = ["SKU", "Type", "Name", "Family", "Colour", "Band Width", "Roll Width", "Schedule", "Status", "Image Link", "Ordering Status"];
 
-        // Map rows to fabric objects
         const fabrics = rows.map(row => {
             const fabric = {};
             allHeaders.forEach(header => {
@@ -69,6 +65,7 @@ async function fetchFabrics() {
         window.allFabricData = fabrics;
         displayFabrics(fabricsWithImages);
         setupFilters(fabricsWithImages);
+        setupFilterButton();
     } catch (error) {
         console.error('Error fetching fabrics:', error);
         document.getElementById('fabricGrid').innerHTML = '<p>Error loading fabrics. Check console for details.</p>';
@@ -205,6 +202,38 @@ function setupFilters(fabricsWithImages) {
     rollWidthFilter.addEventListener('input', debouncedFilterFabrics);
     scheduleFilter.addEventListener('change', debouncedFilterFabrics);
     statusFilter.addEventListener('change', debouncedFilterFabrics);
+}
+
+function setupFilterButton() {
+    const filterBtn = document.getElementById('filterBtn');
+    const filterControls = document.getElementById('filterControls');
+    let isHidden = false;
+
+    // Hide filters when scrolling past them
+    window.addEventListener('scroll', () => {
+        const controlsBottom = filterControls.getBoundingClientRect().bottom;
+        if (controlsBottom < 0 && !isHidden) {
+            filterControls.classList.add('hidden');
+            filterBtn.style.display = 'flex';
+            isHidden = true;
+        }
+    });
+
+    // Toggle filter panel
+    filterBtn.addEventListener('click', () => {
+        if (isHidden) {
+            filterControls.classList.remove('hidden');
+            filterBtn.style.display = 'none';
+            isHidden = false;
+        } else {
+            filterControls.classList.add('hidden');
+            filterBtn.style.display = 'flex';
+            isHidden = true;
+        }
+    });
+
+    // Initially hide button
+    filterBtn.style.display = 'none';
 }
 
 fetchFabrics();
