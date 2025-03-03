@@ -20,15 +20,20 @@ const PLACEHOLDER_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAA
 async function fetchFabrics() {
     try {
         console.log('Fetching data from:', SHEET_URL);
-        const response = await fetch(SHEET_URL);
+        const response = await fetch(SHEET_URL, {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-cache',
+        });
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const text = await response.text();
         console.log('Raw response length:', text.length);
 
+        // Parse Google Sheets JSON response
         const json = JSON.parse(text.slice(47, -2));
         const rows = json.table.rows;
         const cols = json.table.cols;
-        console.log('Parsed rows:', rows);
+        console.log('Parsed rows:', rows.length);
 
         const headerMap = {};
         cols.forEach((col, index) => {
@@ -43,12 +48,12 @@ async function fetchFabrics() {
                 const cellValue = row.c[headerMap[header]];
                 fabric[header] = cellValue?.v || '';
             });
-            
+
             if (fabric["Image Link"] && typeof fabric["Image Link"] === 'string' && fabric["Image Link"].trim() !== '') {
                 try {
                     new URL(fabric["Image Link"]);
                     fabric.hasValidImage = true;
-                    fabric.imageLink = fabric["Image Link"];
+                    fabric.imageLink = fabric["Image Link"].startsWith('http') ? fabric["Image Link"] : `https://${fabric["Image Link"]}`;
                 } catch (e) {
                     fabric.hasValidImage = false;
                     console.warn('Invalid image URL for fabric:', fabric.Name);
@@ -57,24 +62,24 @@ async function fetchFabrics() {
                 fabric.hasValidImage = false;
                 console.warn('No image link provided for fabric:', fabric.Name);
             }
-            
+
             return fabric;
         });
-        
+
         const fabricsWithImages = fabrics.filter(fabric => fabric.hasValidImage);
-        
         console.log('Fabrics with valid images:', fabricsWithImages.length, 'out of', fabrics.length);
-        
+
         window.allFabricData = fabrics;
         displayFabrics(fabricsWithImages);
         setupFilters(fabricsWithImages);
         setupFilterButton();
     } catch (error) {
         console.error('Error fetching fabrics:', error);
-        document.getElementById('fabricGrid').innerHTML = '<p>Error loading fabrics. Check console for details.</p>';
+        document.getElementById('fabricGrid').innerHTML = '<p>Error loading fabrics. Please try again later or check the console for details.</p>';
     }
 }
 
+// The rest of the functions (displayFabrics, showFabricDetails, setupFilters, setupFilterButton) remain unchanged
 function displayFabrics(fabrics) {
     const grid = document.getElementById('fabricGrid');
     grid.innerHTML = '';
@@ -97,7 +102,7 @@ function displayFabrics(fabrics) {
 
     fabrics.forEach(fabric => {
         if (!fabric.hasValidImage) return;
-        
+
         const card = document.createElement('div');
         card.className = 'fabric-card';
         if (fabric["Ordering Status"] === "Low Stock") {
@@ -109,7 +114,7 @@ function displayFabrics(fabrics) {
         img.dataset.src = fabric.imageLink;
         img.alt = fabric.Name || 'Fabric';
         img.className = 'placeholder';
-        
+
         img.onerror = function() {
             console.error('Image failed to load:', this.dataset.src);
             this.src = PLACEHOLDER_IMAGE;
