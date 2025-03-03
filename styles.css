@@ -355,16 +355,50 @@ h1 {
     background: #fff;
     border-radius: 12px;
     padding: 1.5rem;
-    max-width: 500px;
-    max-height: 90vh;
+    width: 80vw; /* Set width relative to viewport width */
+    max-width: 1000px; /* Increase max-width for larger screens */
+    height: 85vh; /* Set height relative to viewport height */
+    max-height: 95vh; /* Ensure it fits within viewport with some margin */
     overflow-y: auto;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     animation: slideIn 0.3s ease;
+    position: relative; /* For positioning magnifier */
 }
 
 @keyframes slideIn {
     from { transform: translateY(-20px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-image-wrapper {
+    position: relative;
+    width: 100%;
+    height: 70%; /* Allocate majority of modal height to image */
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.modal-content img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Ensure image fits without cropping */
+    border-radius: 8px;
+    display: block;
+}
+
+.magnifier {
+    position: absolute;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    border: 2px solid #2b6cb0;
+    background-color: rgba(255, 255, 255, 0.2);
+    pointer-events: none; /* Prevent interference with mouse events */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    display: none; /* Hidden by default */
+    z-index: 1002;
+    background-repeat: no-repeat;
+    background-size: 400%; /* Adjust zoom level (400% = 4x zoom) */
 }
 
 .close {
@@ -381,22 +415,16 @@ h1 {
     color: #2d3748;
 }
 
-.modal-content img {
-    width: 100%;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-}
-
 .modal-content h2 {
     font-size: 1.5rem;
     color: #2b6cb0;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
 }
 
 .modal-content p {
     font-size: 1rem;
     color: #4a5568;
-    margin: 0.5rem 0;
+    margin: 0.25rem 0;
 }
 
 /* Mobile Styles */
@@ -449,8 +477,25 @@ h1 {
     }
 
     .modal-content {
-        max-width: 95%;
-        padding: 0.75rem;
-        margin: 0.5rem;
+        width: 90vw; /* Wider on mobile */
+        height: 90vh; /* Taller on mobile */
+        padding: 1rem;
+    }
+
+    .modal-image-wrapper {
+        height: 60%; /* Slightly less height for image on mobile */
+    }
+
+    .magnifier {
+        width: 100px;
+        height: 100px; /* Smaller magnifier on mobile */
+    }
+
+    .modal-content h2 {
+        font-size: 1.25rem;
+    }
+
+    .modal-content p {
+        font-size: 0.9rem;
     }
 }
