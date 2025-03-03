@@ -1,4 +1,4 @@
-// Google Sheet JSON URL for "Sample Fabrics""
+// Google Sheet JSON URL for "Sample Fabrics"
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1OaLsjBSqyZyGsqN-qnCh-JB4E0QfUlAX_5Rgam5pIkY/gviz/tq?tqx=out:json&sheet=Sample Fabrics';
 
 // Debounce utility
