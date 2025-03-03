@@ -48,12 +48,15 @@ h1 {
 
 /* Hidden State for Filter Panel */
 .controls.hidden {
-    transform: translateY(-120%);
-    position: fixed;
-    width: calc(100% - 2rem); /* Match container padding */
+    position: absolute;
+    top: -100%; /* Start off-screen */
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 2rem);
     max-width: 1400px;
     margin: 0;
     z-index: 1001;
+    visibility: hidden;
 }
 
 /* Input and Select Styles */
@@ -242,7 +245,8 @@ h1 {
 
     .controls.hidden {
         width: 100%;
-        transform: translateY(-120%);
+        left: 0;
+        transform: none;
     }
 
     .grid {
