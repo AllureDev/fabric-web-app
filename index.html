@@ -3,29 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sample Gallery</title>
+    <title>Fabric Sample Gallery</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <h1>Sample Gallery</h1>
-        
-        <!-- Search and Filter Controls -->
+        <h1>Fabric Sample Gallery</h1>
         <div class="controls">
-            <input type="text" id="searchInput" placeholder="Search by Name or SKU">
-            <select id="typeFilter"><option value="">Loading Types...</option></select>
-            <select id="familyFilter"><option value="">Loading Families...</option></select>
-            <select id="colourFilter"><option value="">Loading Colours...</option></select>
-            <select id="bandWidthFilter"><option value="">Loading Band Widths...</option></select>
-            <input type="number" id="rollWidthFilter" placeholder="Min Roll Width (Inches)">
-            <select id="scheduleFilter"><option value="">Loading Schedules...</option></select>
-            <select id="statusFilter"><option value="">Loading Statuses...</option></select>
+            <input type="text" id="searchInput" placeholder="Search fabrics...">
+            <select id="typeFilter"><option value="">All Types</option></select>
+            <select id="familyFilter"><option value="">All Families</option></select>
+            <select id="colourFilter"><option value="">All Colours</option></select>
+            <select id="bandWidthFilter"><option value="">All Band Widths</option></select>
+            <input type="number" id="rollWidthFilter" placeholder="Min Roll Width">
+            <select id="scheduleFilter"><option value="">All Schedules</option></select>
+            <select id="statusFilter"><option value="">All Statuses</option></select>
         </div>
-
-        <!-- Fabric Grid -->
         <div id="fabricGrid" class="grid"></div>
     </div>
-
     <script src="script.js"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'91a51d6bb9cf78ce',t:'MTc0MDk2Mjc2Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
