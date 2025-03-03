@@ -45,7 +45,15 @@ async function fetchFabrics() {
             const fabric = {};
             allHeaders.forEach(header => {
                 const cellValue = row.c[headerMap[header]];
-                fabric[header] = cellValue?.v || '';
+                let value = cellValue?.v || '';
+                
+                // Extract numerical value from "Band Width"
+                if (header === "Band Width" && value) {
+                    const numericValue = value.match(/^\d+/)?.[0] || ''; // Extract leading number
+                    fabric[header] = numericValue; // Store only the number
+                } else {
+                    fabric[header] = value;
+                }
             });
 
             if (fabric["Image Link"] && typeof fabric["Image Link"] === 'string' && fabric["Image Link"].trim() !== '') {
@@ -270,7 +278,7 @@ function setupFilters(fabricsWithImages) {
 
         const filtered = fabricsWithImages.filter(fabric => {
             const rollWidthNum = parseFloat(fabric["Roll Width"]) || 0;
-            const bandWidthValue = fabric["Band Width"] ? String(fabric["Band Width"]).match(/^\d+/)?.[0] || '' : '';
+            const bandWidthValue = fabric["Band Width"]; // Already numeric from fetchFabrics
             const nameMatch = fabric.Name.toLowerCase().includes(searchTerm) || fabric.SKU.toLowerCase().includes(searchTerm);
 
             return (
