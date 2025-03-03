@@ -79,7 +79,6 @@ async function fetchFabrics() {
     }
 }
 
-// The rest of the functions (displayFabrics, showFabricDetails, setupFilters, setupFilterButton) remain unchanged
 function displayFabrics(fabrics) {
     const grid = document.getElementById('fabricGrid');
     grid.innerHTML = '';
@@ -303,8 +302,11 @@ function setupFilters(fabricsWithImages) {
         });
 
         options.addEventListener('click', (e) => {
-            const checkbox = e.target.closest('input[type="checkbox"]');
-            if (!checkbox) return;
+            const option = e.target.closest('.multi-select-option');
+            if (!option) return;
+
+            const checkbox = option.querySelector('input[type="checkbox"]');
+            checkbox.checked = !checkbox.checked; // Toggle checkbox
 
             const value = checkbox.value;
             const isChecked = checkbox.checked;
@@ -316,7 +318,8 @@ function setupFilters(fabricsWithImages) {
                 const remove = document.createElement('span');
                 remove.className = 'remove-tag';
                 remove.textContent = '×';
-                remove.addEventListener('click', () => {
+                remove.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent triggering option click
                     checkbox.checked = false;
                     tag.remove();
                     updateToggleText(filter.id, filter.label);
@@ -351,8 +354,6 @@ function setupFilterButton() {
     const filterBtn = document.getElementById('filterBtn');
     const filterControls = document.getElementById('filterControls');
     let isHidden = false;
-    let lastShownPosition = 0;
-    const BUFFER_ZONE = 200;
 
     const debouncedScrollHandler = debounce(() => {
         const scrollPosition = window.scrollY;
@@ -367,13 +368,8 @@ function setupFilterButton() {
             filterControls.classList.remove('hidden');
             filterControls.style.position = 'sticky';
             filterControls.style.top = '0';
-            filterControls.style.opacity = '1';
             filterBtn.style.display = 'none';
             isHidden = false;
-        } else if (!isHidden && Math.abs(scrollPosition - lastShownPosition) > BUFFER_ZONE) {
-            filterControls.classList.add('hidden');
-            filterBtn.style.display = 'flex';
-            isHidden = true;
         }
     }, 100);
 
@@ -381,18 +377,15 @@ function setupFilterButton() {
 
     filterBtn.addEventListener('click', () => {
         if (isHidden) {
-            const scrollPosition = window.scrollY;
             filterControls.classList.remove('hidden');
             filterControls.style.position = 'absolute';
-            filterControls.style.top = `${scrollPosition + 10}px`;
+            filterControls.style.top = `${window.scrollY + 10}px`;
             filterControls.style.left = '50%';
             filterControls.style.transform = 'translateX(-50%)';
-            filterControls.style.opacity = '1';
             filterControls.style.width = 'calc(100% - 2rem)';
             filterControls.style.maxWidth = '1400px';
             filterBtn.style.display = 'none';
             isHidden = false;
-            lastShownPosition = scrollPosition;
         } else {
             filterControls.classList.add('hidden');
             filterBtn.style.display = 'flex';
@@ -400,7 +393,7 @@ function setupFilterButton() {
         }
     });
 
-    filterBtn.style.display = 'none';
+    filterBtn.style.display = 'none'; // Initial state
 }
 
 fetchFabrics();
