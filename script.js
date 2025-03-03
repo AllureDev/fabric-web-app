@@ -87,7 +87,6 @@ function displayFabrics(fabrics, isFilterUpdate = false) {
         return;
     }
 
-    // Use IntersectionObserver only for initial load, not filter updates
     const observer = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -111,10 +110,8 @@ function displayFabrics(fabrics, isFilterUpdate = false) {
         const img = document.createElement('img');
         img.alt = fabric.Name || 'Fabric';
         if (isFilterUpdate) {
-            // Load images directly on filter update for seamless refresh
             img.src = fabric.imageLink;
         } else {
-            // Use lazy loading with placeholder for initial load
             img.src = PLACEHOLDER_IMAGE;
             img.dataset.src = fabric.imageLink;
             img.className = 'placeholder';
@@ -222,12 +219,12 @@ function setupFilters(fabricsWithImages) {
             checkbox.type = 'checkbox';
             checkbox.value = value;
             checkbox.id = `${filter.id}-${value.replace(/\s+/g, '-')}`;
-            checkbox.style.display = 'none'; // Hide checkbox for cleaner UI
+            checkbox.style.display = 'none';
 
             const optionLabel = document.createElement('label');
             optionLabel.textContent = value;
             optionLabel.setAttribute('for', checkbox.id);
-            optionLabel.style.cursor = 'pointer'; // Indicate clickability
+            optionLabel.style.cursor = 'pointer';
 
             option.appendChild(checkbox);
             option.appendChild(optionLabel);
@@ -271,7 +268,7 @@ function setupFilters(fabricsWithImages) {
             );
         });
 
-        displayFabrics(filtered, true); // Pass true to indicate filter update
+        displayFabrics(filtered, true);
     }
 
     function resetAllFilters() {
@@ -370,11 +367,17 @@ function setupFilterButton() {
                 filterControls.classList.add('hidden');
             }
         } else {
+            // Reset filter state when scrolled back to top
             filterBtn.classList.add('hidden');
             filterControls.classList.remove('hidden');
             filterControls.style.position = 'sticky';
             filterControls.style.top = '0';
-            isFilterVisible = false;
+            filterControls.style.left = 'auto';
+            filterControls.style.transform = 'translateX(0)';
+            filterControls.style.width = 'auto';
+            filterControls.style.maxWidth = '1400px';
+            filterControls.style.zIndex = '1000';
+            isFilterVisible = false; // Reset visibility flag
             filterBtn.classList.remove('active');
         }
     }
@@ -384,7 +387,7 @@ function setupFilterButton() {
 
     filterBtn.addEventListener('click', () => {
         isFilterVisible = !isFilterVisible;
-        
+
         if (isFilterVisible) {
             filterControls.classList.remove('hidden');
             filterControls.style.position = 'fixed';
@@ -399,7 +402,9 @@ function setupFilterButton() {
             filterControls.classList.add('hidden');
             filterControls.style.position = 'sticky';
             filterControls.style.top = '0';
+            filterControls.style.left = 'auto';
             filterControls.style.transform = 'translateX(0)';
+            filterControls.style.width = 'auto';
             filterBtn.classList.remove('active');
         }
     });
