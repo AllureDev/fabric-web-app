@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fabric Sample Gallery</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <h1>Fabric Sample Gallery</h1>
-        <div class="controls">
+        <div class="controls" id="filterControls">
             <input type="text" id="searchInput" placeholder="Search fabrics...">
             <select id="typeFilter"><option value="">All Types</option></select>
             <select id="familyFilter"><option value="">All Families</option></select>
@@ -22,6 +23,7 @@
         </div>
         <div id="fabricGrid" class="grid"></div>
     </div>
+    <div class="filter-btn" id="filterBtn"></div>
     <script src="script.js"></script>
 </body>
 </html>
