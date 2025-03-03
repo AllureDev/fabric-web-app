@@ -303,23 +303,25 @@ function setupFilters(fabricsWithImages) {
 
         options.addEventListener('click', (e) => {
             const option = e.target.closest('.multi-select-option');
-            if (!option) return;
+            if (!option || e.target.className === 'remove-tag') return;
 
             const checkbox = option.querySelector('input[type="checkbox"]');
-            checkbox.checked = !checkbox.checked; // Toggle checkbox
+            checkbox.checked = !checkbox.checked;
 
             const value = checkbox.value;
             const isChecked = checkbox.checked;
+            const existingTag = Array.from(tags.children).find(t => t.textContent.startsWith(value));
 
-            if (isChecked) {
+            if (isChecked && !existingTag) {
                 const tag = document.createElement('span');
                 tag.className = 'selected-tag';
+                tag.dataset.value = value; // Store value for easier lookup
                 tag.textContent = value;
                 const remove = document.createElement('span');
                 remove.className = 'remove-tag';
                 remove.textContent = '×';
                 remove.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Prevent triggering option click
+                    e.stopPropagation();
                     checkbox.checked = false;
                     tag.remove();
                     updateToggleText(filter.id, filter.label);
@@ -327,9 +329,8 @@ function setupFilters(fabricsWithImages) {
                 });
                 tag.appendChild(remove);
                 tags.appendChild(tag);
-            } else {
-                const tag = Array.from(tags.children).find(t => t.textContent.startsWith(value));
-                if (tag) tag.remove();
+            } else if (!isChecked && existingTag) {
+                existingTag.remove();
             }
 
             updateToggleText(filter.id, filter.label);
@@ -354,13 +355,15 @@ function setupFilterButton() {
     const filterBtn = document.getElementById('filterBtn');
     const filterControls = document.getElementById('filterControls');
     let isHidden = false;
+    let lastShownPosition = 0;
+    const BUFFER_ZONE = 500; // Increased buffer for filter persistence
 
     const debouncedScrollHandler = debounce(() => {
         const scrollPosition = window.scrollY;
         const headerHeight = document.querySelector('h1').offsetHeight;
         const controlsHeight = filterControls.offsetHeight;
 
-        if (!isHidden && scrollPosition > (headerHeight + controlsHeight)) {
+        if (!isHidden && scrollPosition > (headerHeight + controlsHeight + BUFFER_ZONE) && scrollPosition > lastShownPosition + BUFFER_ZONE) {
             filterControls.classList.add('hidden');
             filterBtn.style.display = 'flex';
             isHidden = true;
@@ -368,8 +371,10 @@ function setupFilterButton() {
             filterControls.classList.remove('hidden');
             filterControls.style.position = 'sticky';
             filterControls.style.top = '0';
+            filterControls.style.transform = 'translateX(0)';
             filterBtn.style.display = 'none';
             isHidden = false;
+            lastShownPosition = 0;
         }
     }, 100);
 
@@ -386,6 +391,7 @@ function setupFilterButton() {
             filterControls.style.maxWidth = '1400px';
             filterBtn.style.display = 'none';
             isHidden = false;
+            lastShownPosition = window.scrollY;
         } else {
             filterControls.classList.add('hidden');
             filterBtn.style.display = 'flex';
