@@ -273,17 +273,51 @@ h1 {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
 }
 
-.fabric-card img {
+.image-container {
+    position: relative;
     width: 100%;
-    height: 200px;
-    object-fit: cover;
-    display: block;
-    background: #eee;
+    height: 200px; /* Matches original image height */
 }
 
-.fabric-card img.placeholder {
-    opacity: 0.5;
-    filter: blur(2px);
+.placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #eee; /* Light gray base color */
+    z-index: 1; /* Placeholder on top initially */
+}
+
+.shimmer {
+    background: linear-gradient(90deg, #eee 0%, #f5f5f5 50%, #eee 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.image-container.loaded .placeholder {
+    display: none; /* Hide placeholder when image is loaded */
+}
+
+.fabric-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0; /* Start invisible */
+    transition: opacity 0.3s ease; /* Smooth fade-in */
+}
+
+.image-container.loaded img {
+    opacity: 1; /* Fade in when loaded */
 }
 
 .fabric-card p {
@@ -405,8 +439,8 @@ h1 {
         gap: 1rem;
     }
 
-    .fabric-card img {
-        height: 180px;
+    .image-container {
+        height: 180px; /* Matches original mobile image height */
     }
 
     .modal-content {
