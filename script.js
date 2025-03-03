@@ -87,23 +87,23 @@ function displayFabrics(fabrics, isFilterUpdate = false) {
         return;
     }
 
-    const observer = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const imageContainer = entry.target;
-                const img = imageContainer.querySelector('img');
-                img.src = img.dataset.src;
-                img.onload = () => {
-                    imageContainer.classList.add('loaded');
-                };
-                img.onerror = () => {
-                    console.error('Image failed to load:', img.src);
-                    // Optionally show an error icon
-                };
-                observer.unobserve(imageContainer);
-            }
-        });
-    }, { rootMargin: '0px 0px 200px 0px' });
+const observer = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const imageContainer = entry.target;
+            const img = imageContainer.querySelector('img');
+            // Set handlers before assigning src
+            img.onload = () => {
+                imageContainer.classList.add('loaded');
+            };
+            img.onerror = () => {
+                console.error('Image failed to load:', img.dataset.src);
+            };
+            img.src = img.dataset.src;
+            observer.unobserve(imageContainer);
+        }
+    });
+}, { rootMargin: '0px 0px 200px 0px' });
 
     fabrics.forEach(fabric => {
         if (!fabric.hasValidImage) return;
