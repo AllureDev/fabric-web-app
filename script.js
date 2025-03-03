@@ -167,21 +167,63 @@ function showFabricDetails(fabric) {
     modal.innerHTML = `
         <div class="modal-content">
             <span class="close">×</span>
-            <div class="modal-image-wrapper">
-                <img src="${fabric.imageLink}" alt="${fabric.Name}">
-                <div class="magnifier"></div>
-            </div>
-            <h2>${fabric.Name || 'Unnamed Fabric'}</h2>
-            <div class="details">
-                <strong>SKU:</strong> <span>${fabric.SKU || 'N/A'}</span>
-                <strong>Type:</strong> <span>${fabric.Type || 'N/A'}</span>
-                <strong>Family:</strong> <span>${fabric.Family || 'N/A'}</span>
-                <strong>Colour:</strong> <span>${fabric.Colour || 'N/A'}</span>
-                <strong>Band Width:</strong> <span>${fabric["Band Width"] != null && fabric["Band Width"] !== '' ? fabric["Band Width"] : 'N/A'}</span>
-                <strong>Roll Width:</strong> <span>${fabric["Roll Width"] || 'N/A'}</span>
-                <strong>Schedule:</strong> <span>${fabric.Schedule || 'N/A'}</span>
-                <strong>Status:</strong> <span>${fabric.Status || 'N/A'}</span>
-                <strong>Ordering:</strong> <span>${fabric["Ordering Status"] || 'N/A'}</span>
+            <div class="modal-grid">
+                <div class="modal-image-section">
+                    <div class="modal-image-wrapper">
+                        <img src="${fabric.imageLink}" alt="${fabric.Name || 'Unnamed Fabric'}">
+                        <div class="magnifier"></div>
+                    </div>
+                </div>
+                <div class="modal-details-section">
+                    <h2>${fabric.Name || 'Unnamed Fabric'}</h2>
+                    <div class="details-grid">
+                        <div class="detail-item">
+                            <i class="fas fa-barcode"></i>
+                            <strong>SKU</strong>
+                            <span>${fabric.SKU || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-tag"></i>
+                            <strong>Type</strong>
+                            <span>${fabric.Type || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-layer-group"></i>
+                            <strong>Family</strong>
+                            <span>${fabric.Family || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-palette"></i>
+                            <strong>Colour</strong>
+                            <span>${fabric.Colour || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-ruler-horizontal"></i>
+                            <strong>Band Width</strong>
+                            <span>${fabric["Band Width"] != null && fabric["Band Width"] !== '' ? fabric["Band Width"] : 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-ruler"></i>
+                            <strong>Roll Width</strong>
+                            <span>${fabric["Roll Width"] || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-calendar-alt"></i>
+                            <strong>Schedule</strong>
+                            <span>${fabric.Schedule || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Status</strong>
+                            <span>${fabric.Status || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-shopping-cart"></i>
+                            <strong>Ordering</strong>
+                            <span class="${fabric['Ordering Status'] === 'Low Stock' ? 'low-stock-text' : ''}">${fabric["Ordering Status"] || 'N/A'}</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     `;
@@ -201,78 +243,63 @@ function showFabricDetails(fabric) {
         isImageLoaded = true;
     };
 
-    // Magnifier Logic
-function updateMagnifier(e, clientX, clientY) {
-    if (!isImageLoaded) return;
+    function updateMagnifier(e, clientX, clientY) {
+        if (!isImageLoaded) return;
+        const rect = modalImg.getBoundingClientRect();
+        const imgWidth = modalImg.offsetWidth;
+        const imgHeight = modalImg.offsetHeight;
+        const mouseX = clientX - rect.left;
+        const mouseY = clientY - rect.top;
 
-    const rect = modalImg.getBoundingClientRect();
-    const imgWidth = modalImg.offsetWidth;
-    const imgHeight = modalImg.offsetHeight;
-    const mouseX = clientX - rect.left;
-    const mouseY = clientY - rect.top;
+        if (mouseX < 0 || mouseY < 0 || mouseX > imgWidth || mouseY > imgHeight) {
+            magnifier.style.display = 'none';
+            return;
+        }
 
-    if (mouseX < 0 || mouseY < 0 || mouseX > imgWidth || mouseY > imgHeight) {
-        magnifier.style.display = 'none';
-        return;
+        magnifier.style.display = 'block';
+        const sizePercentage = 0.2;
+        let magWidth = imgWidth * sizePercentage;
+        let magHeight = imgHeight * sizePercentage;
+        const minSize = 100;
+        const maxSize = 300;
+        magWidth = Math.max(minSize, Math.min(maxSize, magWidth));
+        magHeight = Math.max(minSize, Math.min(maxSize, magHeight));
+
+        magnifier.style.width = `${magWidth}px`;
+        magnifier.style.height = `${magHeight}px`;
+
+        const zoomFactor = 2;
+        let magX = mouseX - magWidth / 2;
+        let magY = mouseY - magHeight / 2;
+        magX = Math.max(0, Math.min(magX, imgWidth - magWidth));
+        magY = Math.max(0, Math.min(magY, imgHeight - magHeight));
+
+        magnifier.style.left = `${magX}px`;
+        magnifier.style.top = `${magY}px`;
+
+        const bgX = -((mouseX / imgWidth) * (imgWidth * zoomFactor) - magWidth / 2);
+        const bgY = -((mouseY / imgHeight) * (imgHeight * zoomFactor) - magHeight / 2);
+        magnifier.style.backgroundImage = `url('${modalImg.src}')`;
+        magnifier.style.backgroundPosition = `${bgX}px ${bgY}px`;
+        magnifier.style.backgroundSize = `${imgWidth * zoomFactor}px ${imgHeight * zoomFactor}px`;
     }
 
-    magnifier.style.display = 'block';
-
-    // Dynamically calculate magnifier size as a percentage of the image
-    const sizePercentage = 0.2; // 20% of the image size (adjust as needed)
-    let magWidth = imgWidth * sizePercentage;
-    let magHeight = imgHeight * sizePercentage;
-
-    // Enforce minimum and maximum sizes
-    const minSize = 100; // Minimum size in pixels
-    const maxSize = 300; // Maximum size in pixels
-    magWidth = Math.max(minSize, Math.min(maxSize, magWidth));
-    magHeight = Math.max(minSize, Math.min(maxSize, magHeight));
-
-    // Apply the calculated size to the magnifier
-    magnifier.style.width = `${magWidth}px`;
-    magnifier.style.height = `${magHeight}px`;
-
-    const zoomFactor = 2;
-
-    let magX = mouseX - magWidth / 2;
-    let magY = mouseY - magHeight / 2;
-
-    magX = Math.max(0, Math.min(magX, imgWidth - magWidth));
-    magY = Math.max(0, Math.min(magY, imgHeight - magHeight));
-
-    magnifier.style.left = `${magX}px`;
-    magnifier.style.top = `${magY}px`;
-
-    const bgX = -((mouseX / imgWidth) * (imgWidth * zoomFactor) - magWidth / 2);
-    const bgY = -((mouseY / imgHeight) * (imgHeight * zoomFactor) - magHeight / 2);
-    magnifier.style.backgroundImage = `url('${modalImg.src}')`;
-    magnifier.style.backgroundPosition = `${bgX}px ${bgY}px`;
-    magnifier.style.backgroundSize = `${imgWidth * zoomFactor}px ${imgHeight * zoomFactor}px`;
-}
-
-    // Mouse Events
     imageWrapper.addEventListener('mousemove', (e) => {
         updateMagnifier(e, e.clientX, e.clientY);
     });
-
     imageWrapper.addEventListener('mouseleave', () => {
         magnifier.style.display = 'none';
     });
-
-    // Touch Events
     imageWrapper.addEventListener('touchstart', (e) => {
         e.preventDefault();
         const touch = e.touches[0];
         updateMagnifier(e, touch.clientX, touch.clientY);
     });
-
     imageWrapper.addEventListener('touchmove', (e) => {
         e.preventDefault();
         const touch = e.touches[0];
         updateMagnifier(e, touch.clientX, touch.clientY);
     });
-
     imageWrapper.addEventListener('touchend', () => {
         magnifier.style.display = 'none';
     });
