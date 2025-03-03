@@ -51,7 +51,6 @@ async function fetchFabrics() {
                     const stringValue = String(value);
                     const numericMatch = stringValue.match(/^\d+(\.\d+)?/);
                     const numericValue = numericMatch ? parseFloat(numericMatch[0]) : '';
-                    console.log(`Parsed Band Width for ${fabric.Name || 'Unnamed'}: "${value}" -> ${numericValue}`);
                     fabric[header] = numericValue;
                 } else {
                     fabric[header] = value;
@@ -196,50 +195,78 @@ function showFabricDetails(fabric) {
         this.src = PLACEHOLDER_IMAGE;
     };
 
-    // Magnifying Glass Logic
     let isImageLoaded = false;
     modalImg.onload = () => {
         isImageLoaded = true;
+        // Adjust modal size to fit image
+        const naturalWidth = modalImg.naturalWidth;
+        const naturalHeight = modalImg.naturalHeight;
+        const maxWidth = Math.min(naturalWidth, window.innerWidth * 0.95);
+        const maxHeight = Math.min(naturalHeight + 150, window.innerHeight * 0.95); // +150 for text content
+        modal.querySelector('.modal-content').style.width = `${maxWidth}px`;
+        modal.querySelector('.modal-content').style.height = `${maxHeight}px`;
     };
 
-    imageWrapper.addEventListener('mousemove', (e) => {
+    // Magnifier Logic
+    function updateMagnifier(e, clientX, clientY) {
         if (!isImageLoaded) return;
 
         const rect = modalImg.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
+        const imgWidth = modalImg.offsetWidth;
+        const imgHeight = modalImg.offsetHeight;
+        const mouseX = clientX - rect.left;
+        const mouseY = clientY - rect.top;
 
-        // Check if mouse is within image bounds
-        if (mouseX < 0 || mouseY < 0 || mouseX > rect.width || mouseY > rect.height) {
+        if (mouseX < 0 || mouseY < 0 || mouseX > imgWidth || mouseY > imgHeight) {
             magnifier.style.display = 'none';
             return;
         }
 
         magnifier.style.display = 'block';
 
-        // Magnifier dimensions
         const magWidth = magnifier.offsetWidth;
         const magHeight = magnifier.offsetHeight;
+        const zoomFactor = 4;
 
-        // Position magnifier
         let magX = mouseX - magWidth / 2;
         let magY = mouseY - magHeight / 2;
 
-        // Keep magnifier within image bounds
-        magX = Math.max(0, Math.min(magX, rect.width - magWidth));
-        magY = Math.max(0, Math.min(magY, rect.height - magHeight));
+        magX = Math.max(0, Math.min(magX, imgWidth - magWidth));
+        magY = Math.max(0, Math.min(magY, imgHeight - magHeight));
 
         magnifier.style.left = `${magX}px`;
         magnifier.style.top = `${magY}px`;
 
-        // Calculate background position for zoom effect
-        const bgX = -(mouseX * 4 - magWidth / 2); // 4x zoom factor
-        const bgY = -(mouseY * 4 - magHeight / 2);
+        const bgX = -((mouseX / imgWidth) * (imgWidth * zoomFactor) - magWidth / 2);
+        const bgY = -((mouseY / imgHeight) * (imgHeight * zoomFactor) - magHeight / 2);
         magnifier.style.backgroundImage = `url('${modalImg.src}')`;
         magnifier.style.backgroundPosition = `${bgX}px ${bgY}px`;
+        magnifier.style.backgroundSize = `${imgWidth * zoomFactor}px ${imgHeight * zoomFactor}px`;
+    }
+
+    // Mouse Events
+    imageWrapper.addEventListener('mousemove', (e) => {
+        updateMagnifier(e, e.clientX, e.clientY);
     });
 
     imageWrapper.addEventListener('mouseleave', () => {
+        magnifier.style.display = 'none';
+    });
+
+    // Touch Events
+    imageWrapper.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        updateMagnifier(e, touch.clientX, touch.clientY);
+    });
+
+    imageWrapper.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        updateMagnifier(e, touch.clientX, touch.clientY);
+    });
+
+    imageWrapper.addEventListener('touchend', () => {
         magnifier.style.display = 'none';
     });
 
@@ -343,7 +370,6 @@ function setupFilters(fabricsWithImages) {
         const filtered = fabricsWithImages.filter(fabric => {
             const rollWidthNum = parseFloat(fabric["Roll Width"]) || 0;
             const bandWidthValue = fabric["Band Width"];
-            console.log(`Filtering ${fabric.Name}: Band Width = ${bandWidthValue}, Type = ${typeof bandWidthValue}`);
             const nameMatch = fabric.Name.toLowerCase().includes(searchTerm) || fabric.SKU.toLowerCase().includes(searchTerm);
 
             return (
