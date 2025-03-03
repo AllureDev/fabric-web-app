@@ -78,7 +78,7 @@ async function fetchFabrics() {
     }
 }
 
-function displayFabrics(fabrics) {
+function displayFabrics(fabrics, isFilterUpdate = false) {
     const grid = document.getElementById('fabricGrid');
     grid.innerHTML = '';
 
@@ -87,6 +87,7 @@ function displayFabrics(fabrics) {
         return;
     }
 
+    // Use IntersectionObserver only for initial load, not filter updates
     const observer = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -108,15 +109,21 @@ function displayFabrics(fabrics) {
         }
 
         const img = document.createElement('img');
-        img.src = PLACEHOLDER_IMAGE;
-        img.dataset.src = fabric.imageLink;
         img.alt = fabric.Name || 'Fabric';
-        img.className = 'placeholder';
+        if (isFilterUpdate) {
+            // Load images directly on filter update for seamless refresh
+            img.src = fabric.imageLink;
+        } else {
+            // Use lazy loading with placeholder for initial load
+            img.src = PLACEHOLDER_IMAGE;
+            img.dataset.src = fabric.imageLink;
+            img.className = 'placeholder';
+            observer.observe(img);
+        }
 
         img.onerror = function() {
-            console.error('Image failed to load:', this.dataset.src);
+            console.error('Image failed to load:', this.src || this.dataset.src);
             this.src = PLACEHOLDER_IMAGE;
-            card.remove();
         };
 
         const nameP = document.createElement('p');
@@ -128,7 +135,6 @@ function displayFabrics(fabrics) {
         card.addEventListener('click', () => showFabricDetails(fabric));
 
         grid.appendChild(card);
-        observer.observe(img);
     });
 }
 
@@ -138,7 +144,7 @@ function showFabricDetails(fabric) {
     modal.innerHTML = `
         <div class="modal-content">
             <span class="close">×</span>
-            <img src="${PLACEHOLDER_IMAGE}" data-src="${fabric.imageLink}" alt="${fabric.Name}" style="max-width:100%;">
+            <img src="${fabric.imageLink}" alt="${fabric.Name}" style="max-width:100%;">
             <h2>${fabric.Name || 'Unnamed Fabric'}</h2>
             <p><strong>SKU:</strong> ${fabric.SKU || 'N/A'}</p>
             <p><strong>Type:</strong> ${fabric.Type || 'N/A'}</p>
@@ -154,10 +160,8 @@ function showFabricDetails(fabric) {
     document.body.appendChild(modal);
 
     const modalImg = modal.querySelector('img');
-    modalImg.src = modalImg.dataset.src;
-
     modalImg.onerror = function() {
-        console.error('Full image failed to load:', this.dataset.src);
+        console.error('Full image failed to load:', this.src);
         this.src = PLACEHOLDER_IMAGE;
     };
 
@@ -218,10 +222,12 @@ function setupFilters(fabricsWithImages) {
             checkbox.type = 'checkbox';
             checkbox.value = value;
             checkbox.id = `${filter.id}-${value.replace(/\s+/g, '-')}`;
+            checkbox.style.display = 'none'; // Hide checkbox for cleaner UI
 
             const optionLabel = document.createElement('label');
             optionLabel.textContent = value;
             optionLabel.setAttribute('for', checkbox.id);
+            optionLabel.style.cursor = 'pointer'; // Indicate clickability
 
             option.appendChild(checkbox);
             option.appendChild(optionLabel);
@@ -265,7 +271,7 @@ function setupFilters(fabricsWithImages) {
             );
         });
 
-        displayFabrics(filtered);
+        displayFabrics(filtered, true); // Pass true to indicate filter update
     }
 
     function resetAllFilters() {
@@ -305,30 +311,33 @@ function setupFilters(fabricsWithImages) {
             if (!option) return;
 
             const checkbox = option.querySelector('input[type="checkbox"]');
-            checkbox.checked = !checkbox.checked;
+            const label = option.querySelector('label');
+            if (e.target === label || option.contains(e.target)) {
+                checkbox.checked = !checkbox.checked;
 
-            const value = checkbox.value;
-            const isChecked = checkbox.checked;
-            const existingTag = Array.from(tags.children).find(t => t.dataset.value === value);
+                const value = checkbox.value;
+                const isChecked = checkbox.checked;
+                const existingTag = Array.from(tags.children).find(t => t.dataset.value === value);
 
-            if (isChecked && !existingTag) {
-                const tag = document.createElement('span');
-                tag.className = 'selected-tag';
-                tag.dataset.value = value;
-                tag.textContent = `${value} ×`; // Inline '×' for simplicity
-                tag.addEventListener('click', () => {
-                    checkbox.checked = false;
-                    tag.remove();
-                    updateToggleText(filter.id, filter.label);
-                    filterFabrics();
-                });
-                tags.appendChild(tag);
-            } else if (!isChecked && existingTag) {
-                existingTag.remove();
+                if (isChecked && !existingTag) {
+                    const tag = document.createElement('span');
+                    tag.className = 'selected-tag';
+                    tag.dataset.value = value;
+                    tag.textContent = `${value} ×`;
+                    tag.addEventListener('click', () => {
+                        checkbox.checked = false;
+                        tag.remove();
+                        updateToggleText(filter.id, filter.label);
+                        filterFabrics();
+                    });
+                    tags.appendChild(tag);
+                } else if (!isChecked && existingTag) {
+                    existingTag.remove();
+                }
+
+                updateToggleText(filter.id, filter.label);
+                filterFabrics();
             }
-
-            updateToggleText(filter.id, filter.label);
-            filterFabrics();
         });
 
         document.addEventListener('click', (e) => {
@@ -341,7 +350,7 @@ function setupFilters(fabricsWithImages) {
     function updateToggleText(filterId, label) {
         const selected = Array.from(document.querySelectorAll(`#${filterId} .multi-select-option input:checked`));
         const toggle = document.querySelector(`#${filterId} .multi-select-toggle`);
-        toggle.textContent = selected.length > 0 ? `${selected.length} ${label} selected` : `Select ${label}`;
+        toggle.textContent = selected.length > 0 ? `${selected.length} ${label} selected` : `Select ${filter.label}`;
     }
 }
 
@@ -371,7 +380,6 @@ function setupFilterButton() {
             lastShownPosition = 0;
         }
 
-        // Update filterControls position when visible and floating
         if (!isHidden && filterControls.style.position === 'fixed') {
             filterControls.style.top = `${Math.max(10, scrollPosition + 10)}px`;
         }
@@ -382,18 +390,18 @@ function setupFilterButton() {
     filterBtn.addEventListener('click', () => {
         if (isHidden) {
             filterControls.classList.remove('hidden');
+            filterControls.style.display = 'grid'; // Ensure visibility
             filterControls.style.position = 'fixed';
             filterControls.style.top = `${window.scrollY + 10}px`;
             filterControls.style.left = '50%';
             filterControls.style.transform = 'translateX(-50%)';
             filterControls.style.width = 'calc(100% - 2rem)';
             filterControls.style.maxWidth = '1400px';
-            filterControls.style.zIndex = '1001'; // Ensure it stays above content
+            filterControls.style.zIndex = '1001';
             filterBtn.style.display = 'none';
             isHidden = false;
             lastShownPosition = window.scrollY;
 
-            // Hide filters if scrolled beyond buffer
             const checkScroll = () => {
                 if (window.scrollY > lastShownPosition + BUFFER_ZONE || window.scrollY < lastShownPosition - BUFFER_ZONE) {
                     filterControls.classList.add('hidden');
