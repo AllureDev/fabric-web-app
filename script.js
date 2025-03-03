@@ -1,6 +1,19 @@
 // Google Sheet JSON URL for "Sample Fabrics"
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1OaLsjBSqyZyGsqN-qnCh-JB4E0QfUlAX_5Rgam5pIkY/gviz/tq?tqx=out:json&sheet=Sample Fabrics';
 
+// Debounce utility
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
 async function fetchFabrics() {
     try {
         console.log('Fetching data from:', SHEET_URL);
@@ -67,7 +80,7 @@ function displayFabrics(fabrics) {
     grid.innerHTML = '';
 
     if (fabrics.length === 0) {
-        grid.innerHTML = '<p>No fabrics with images found.</p>';
+        grid.innerHTML = '<p>No matching fabrics found.</p>';
         return;
     }
 
@@ -76,9 +89,8 @@ function displayFabrics(fabrics) {
         
         const card = document.createElement('div');
         card.className = 'fabric-card';
-        // Set background color to #e06666 if Ordering Status is "Low Stock"
         if (fabric["Ordering Status"] === "Low Stock") {
-            card.style.backgroundColor = '#e06666';
+            card.classList.add('low-stock');
         }
 
         const img = document.createElement('img');
@@ -183,14 +195,16 @@ function setupFilters(fabricsWithImages) {
         displayFabrics(filtered);
     }
 
-    searchInput.addEventListener('input', filterFabrics);
-    typeFilter.addEventListener('change', filterFabrics);
-    familyFilter.addEventListener('change', filterFabrics);
-    colourFilter.addEventListener('change', filterFabrics);
-    bandWidthFilter.addEventListener('change', filterFabrics);
-    rollWidthFilter.addEventListener('input', filterFabrics);
-    scheduleFilter.addEventListener('change', filterFabrics);
-    statusFilter.addEventListener('change', filterFabrics);
+    const debouncedFilterFabrics = debounce(filterFabrics, 300);
+
+    searchInput.addEventListener('input', debouncedFilterFabrics);
+    typeFilter.addEventListener('change', debouncedFilterFabrics);
+    familyFilter.addEventListener('change', debouncedFilterFabrics);
+    colourFilter.addEventListener('change', debouncedFilterFabrics);
+    bandWidthFilter.addEventListener('change', debouncedFilterFabrics);
+    rollWidthFilter.addEventListener('input', debouncedFilterFabrics);
+    scheduleFilter.addEventListener('change', debouncedFilterFabrics);
+    statusFilter.addEventListener('change', debouncedFilterFabrics);
 }
 
 fetchFabrics();
