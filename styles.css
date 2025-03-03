@@ -40,7 +40,9 @@ h1 {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    opacity: 1;
+    transform: translateY(0);
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -48,9 +50,10 @@ h1 {
 
 /* Hidden State for Filter Panel */
 .controls.hidden {
-    position: absolute;
     opacity: 0;
+    transform: translateY(-20px);
     visibility: hidden;
+    transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 /* Filter Wrapper */
@@ -144,6 +147,7 @@ h1 {
     display: flex;
     align-items: center;
     cursor: pointer;
+    user-select: none;
 }
 
 .multi-select-option:hover {
@@ -152,6 +156,12 @@ h1 {
 
 .multi-select-option input[type="checkbox"] {
     margin-right: 0.5rem;
+    cursor: pointer;
+}
+
+.multi-select-option label {
+    flex: 1;
+    cursor: pointer;
 }
 
 .selected-tags {
@@ -208,7 +218,14 @@ h1 {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     cursor: pointer;
     z-index: 999;
+    opacity: 0;
+    transform: scale(0.8);
     transition: all 0.3s ease;
+}
+
+.filter-btn[style*="display: flex"] {
+    opacity: 1;
+    transform: scale(1);
 }
 
 .filter-btn:hover {
@@ -335,12 +352,41 @@ h1 {
     }
 
     .controls {
-        grid-template-columns: 1fr;
-        padding: 0.75rem;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        padding: 0.5rem;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+    }
+
+    .filter-wrapper {
+        margin-bottom: 0.5rem;
+    }
+
+    .multi-select-options {
+        max-height: 150px;
+        width: 100%;
+        max-width: none;
+        position: absolute;
+        z-index: 1001;
+    }
+
+    .multi-select-toggle {
+        font-size: 0.9rem;
+        padding: 0.5rem;
+    }
+
+    .selected-tags {
+        margin-top: 0.25rem;
+    }
+
+    .selected-tag {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.4rem;
     }
 
     .grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
         gap: 1rem;
     }
 
@@ -349,7 +395,8 @@ h1 {
     }
 
     .modal-content {
-        max-width: 90%;
-        padding: 1rem;
+        max-width: 95%;
+        padding: 0.75rem;
+        margin: 0.5rem;
     }
 }
