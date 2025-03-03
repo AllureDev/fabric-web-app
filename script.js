@@ -223,30 +223,31 @@ function setupFilterButton() {
     const filterControls = document.getElementById('filterControls');
     let isHidden = false;
 
-    // Hide filters when scrolling past them
     window.addEventListener('scroll', () => {
-        const controlsBottom = filterControls.getBoundingClientRect().bottom;
-        if (controlsBottom < 0 && !isHidden) {
+        const scrollPosition = window.scrollY;
+        const headerHeight = document.querySelector('h1').offsetHeight;
+        const controlsHeight = filterControls.offsetHeight;
+
+        if (scrollPosition > (headerHeight + controlsHeight) && !isHidden) {
             filterControls.classList.add('hidden');
             filterBtn.style.display = 'flex';
             isHidden = true;
+        } else if (scrollPosition <= (headerHeight + controlsHeight) && isHidden) {
+            filterControls.classList.remove('hidden');
+            filterBtn.style.display = 'none';
+            isHidden = false;
         }
     });
 
-    // Toggle filter panel
     filterBtn.addEventListener('click', () => {
         if (isHidden) {
             filterControls.classList.remove('hidden');
             filterBtn.style.display = 'none';
             isHidden = false;
-        } else {
-            filterControls.classList.add('hidden');
-            filterBtn.style.display = 'flex';
-            isHidden = true;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     });
 
-    // Initially hide button
     filterBtn.style.display = 'none';
 }
 
