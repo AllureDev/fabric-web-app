@@ -357,68 +357,56 @@ function setupFilters(fabricsWithImages) {
 function setupFilterButton() {
     const filterBtn = document.getElementById('filterBtn');
     const filterControls = document.getElementById('filterControls');
-    let isHidden = false;
-    let lastShownPosition = 0;
-    const BUFFER_ZONE = 500;
+    let isFilterVisible = false;
+    const headerHeight = document.querySelector('h1').offsetHeight;
+    const BUFFER_ZONE = 200;
 
-    const debouncedScrollHandler = debounce(() => {
+    function updateFilterVisibility() {
         const scrollPosition = window.scrollY;
-        const headerHeight = document.querySelector('h1').offsetHeight;
-        const controlsHeight = filterControls.offsetHeight;
 
-        if (!isHidden && scrollPosition > (headerHeight + controlsHeight + BUFFER_ZONE)) {
-            filterControls.classList.add('hidden');
-            filterBtn.style.display = 'flex';
-            isHidden = true;
-        } else if (isHidden && scrollPosition <= headerHeight) {
+        if (scrollPosition > headerHeight + BUFFER_ZONE) {
+            filterBtn.classList.remove('hidden');
+            if (!isFilterVisible) {
+                filterControls.classList.add('hidden');
+            }
+        } else {
+            filterBtn.classList.add('hidden');
             filterControls.classList.remove('hidden');
             filterControls.style.position = 'sticky';
             filterControls.style.top = '0';
-            filterControls.style.transform = 'translateX(0)';
-            filterBtn.style.display = 'none';
-            isHidden = false;
-            lastShownPosition = 0;
+            isFilterVisible = false;
+            filterBtn.classList.remove('active');
         }
+    }
 
-        if (!isHidden && filterControls.style.position === 'fixed') {
-            filterControls.style.top = `${Math.max(10, scrollPosition + 10)}px`;
-        }
-    }, 100);
-
+    const debouncedScrollHandler = debounce(updateFilterVisibility, 100);
     window.addEventListener('scroll', debouncedScrollHandler);
 
     filterBtn.addEventListener('click', () => {
-        if (isHidden) {
+        isFilterVisible = !isFilterVisible;
+        
+        if (isFilterVisible) {
             filterControls.classList.remove('hidden');
-            filterControls.style.display = 'grid'; // Ensure visibility
             filterControls.style.position = 'fixed';
-            filterControls.style.top = `${window.scrollY + 10}px`;
+            filterControls.style.top = '1rem';
             filterControls.style.left = '50%';
             filterControls.style.transform = 'translateX(-50%)';
             filterControls.style.width = 'calc(100% - 2rem)';
             filterControls.style.maxWidth = '1400px';
             filterControls.style.zIndex = '1001';
-            filterBtn.style.display = 'none';
-            isHidden = false;
-            lastShownPosition = window.scrollY;
-
-            const checkScroll = () => {
-                if (window.scrollY > lastShownPosition + BUFFER_ZONE || window.scrollY < lastShownPosition - BUFFER_ZONE) {
-                    filterControls.classList.add('hidden');
-                    filterBtn.style.display = 'flex';
-                    isHidden = true;
-                    window.removeEventListener('scroll', checkScroll);
-                }
-            };
-            window.addEventListener('scroll', checkScroll);
+            filterBtn.classList.add('active');
         } else {
             filterControls.classList.add('hidden');
-            filterBtn.style.display = 'flex';
-            isHidden = true;
+            filterControls.style.position = 'sticky';
+            filterControls.style.top = '0';
+            filterControls.style.transform = 'translateX(0)';
+            filterBtn.classList.remove('active');
         }
     });
 
-    filterBtn.style.display = 'none'; // Initial state
+    // Initial state
+    filterBtn.classList.add('hidden');
+    updateFilterVisibility();
 }
 
 fetchFabrics();
