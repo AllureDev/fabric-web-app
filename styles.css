@@ -11,6 +11,7 @@ body {
     min-height: 100vh;
     color: #2d3748;
     line-height: 1.6;
+    padding-top: 20px; /* Add padding to prevent content hiding under sticky header */
 }
 
 /* Container */
@@ -41,6 +42,9 @@ h1 {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 0.75rem;
     transition: transform 0.3s ease;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 
 /* Hidden State for Filter Panel */
@@ -71,6 +75,22 @@ h1 {
     outline: none;
     background: #fff;
     box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.3);
+}
+
+/* Reset Button */
+.reset-btn {
+    padding: 0.75rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 8px;
+    background: #e53e3e;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.reset-btn:hover {
+    background: #c53030;
 }
 
 /* Floating Action Button */
@@ -219,6 +239,8 @@ h1 {
     .controls {
         grid-template-columns: 1fr;
         padding: 0.75rem;
+        position: sticky; /* Keep sticky on mobile */
+        top: 0;
     }
 
     .controls.hidden {
