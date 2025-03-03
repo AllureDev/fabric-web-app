@@ -47,12 +47,13 @@ async function fetchFabrics() {
                 const cellValue = row.c[headerMap[header]];
                 let value = cellValue?.v || '';
                 
-                // Handle "Band Width" with type safety
+                // Handle "Band Width" with improved parsing for decimals
                 if (header === "Band Width" && value !== '') {
-                    // Convert value to string and extract leading number
-                    const stringValue = String(value); // Ensure it's a string
-                    const numericValue = stringValue.match(/^\d+/)?.[0] || '';
-                    fabric[header] = numericValue; // Store only the number
+                    const stringValue = String(value);
+                    // Match numbers with optional decimal places (e.g., "3", "3.5", "4.75")
+                    const numericMatch = stringValue.match(/^\d+(\.\d+)?/);
+                    const numericValue = numericMatch ? parseFloat(numericMatch[0]) : '';
+                    fabric[header] = numericValue; // Store as number or empty string if no match
                 } else {
                     fabric[header] = value;
                 }
@@ -107,7 +108,7 @@ function displayFabrics(fabrics, isFilterUpdate = false) {
                 };
                 img.onerror = () => {
                     console.error('Image failed to load:', img.dataset.src);
-                    img.src = PLACEHOLDER_IMAGE; // Fallback to placeholder
+                    img.src = PLACEHOLDER_IMAGE;
                     imageContainer.classList.add('loaded');
                 };
                 img.src = img.dataset.src;
@@ -174,7 +175,7 @@ function showFabricDetails(fabric) {
             <p><strong>Type:</strong> ${fabric.Type || 'N/A'}</p>
             <p><strong>Family:</strong> ${fabric.Family || 'N/A'}</p>
             <p><strong>Colour:</strong> ${fabric.Colour || 'N/A'}</p>
-            <p><strong>Band Width:</strong> ${fabric["Band Width"] || 'N/A'}</p>
+            <p><strong>Band Width:</strong> ${fabric["Band Width"] !== '' ? fabric["Band Width"] : 'N/A'}</p>
             <p><strong>Roll Width:</strong> ${fabric["Roll Width"] || 'N/A'}</p>
             <p><strong>Schedule:</strong> ${fabric.Schedule || 'N/A'}</p>
             <p><strong>Status:</strong> ${fabric.Status || 'N/A'}</p>
@@ -212,7 +213,15 @@ function setupFilters(fabricsWithImages) {
 
     const filterValues = {};
     filters.forEach(f => {
-        filterValues[f.id] = [...new Set(fabricsWithImages.map(fabric => String(fabric[f.key] || '')))].filter(Boolean);
+        if (f.key === 'Band Width') {
+            // For Band Width, use unique numerical values as numbers
+            filterValues[f.id] = [...new Set(fabricsWithImages
+                .map(fabric => fabric[f.key])
+                .filter(v => v !== '' && !isNaN(v)))]
+                .sort((a, b) => a - b); // Sort numerically
+        } else {
+            filterValues[f.id] = [...new Set(fabricsWithImages.map(fabric => String(fabric[f.key] || '')))].filter(Boolean);
+        }
     });
 
     filters.forEach(filter => {
@@ -245,7 +254,7 @@ function setupFilters(fabricsWithImages) {
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.value = value;
-            checkbox.id = `${filter.id}-${value.replace(/\s+/g, '-')}`;
+            checkbox.id = `${filter.id}-${String(value).replace(/\s+/g, '-')}`;
             checkbox.style.display = 'none';
 
             const optionLabel = document.createElement('label');
@@ -275,12 +284,13 @@ function setupFilters(fabricsWithImages) {
         filters.forEach(filter => {
             selectedValues[filter.key] = Array.from(
                 document.querySelectorAll(`#${filter.id} .multi-select-option input:checked`)
-            ).map(input => input.value);
+            ).map(input => filter.key === 'Band Width' ? parseFloat(input.value) : input.value);
         });
 
         const filtered = fabricsWithImages.filter(fabric => {
             const rollWidthNum = parseFloat(fabric["Roll Width"]) || 0;
-            const bandWidthValue = fabric["Band Width"]; // Already numeric from fetchFabrics
+            const bandWidthValue = fabric["Band Width"]; // Numeric from fetchFabrics
+            
             const nameMatch = fabric.Name.toLowerCase().includes(searchTerm) || fabric.SKU.toLowerCase().includes(searchTerm);
 
             return (
