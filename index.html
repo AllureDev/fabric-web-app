@@ -12,14 +12,14 @@
     <div class="container">
         <h1>Fabric Sample Gallery</h1>
         <div class="controls" id="filterControls">
-            <input type="text" id="searchInput" placeholder="Search fabrics...">
-            <select id="typeFilter"><option value="">All Types</option></select>
-            <select id="familyFilter"><option value="">All Families</option></select>
-            <select id="colourFilter"><option value="">All Colours</option></select>
-            <select id="bandWidthFilter"><option value="">All Band Widths</option></select>
-            <input type="number" id="rollWidthFilter" placeholder="Min Roll Width">
-            <select id="scheduleFilter"><option value="">All Schedules</option></select>
-            <select id="statusFilter"><option value="">All Statuses</option></select>
+            <div class="filter-wrapper">
+                <label for="searchInput">Search</label>
+                <input type="text" id="searchInput" placeholder="Search fabrics...">
+            </div>
+            <div class="filter-wrapper">
+                <label for="rollWidthFilter">Min Roll Width</label>
+                <input type="number" id="rollWidthFilter" placeholder="Min Roll Width">
+            </div>
             <button id="resetFilters" class="reset-btn">Reset Filters</button>
         </div>
         <div id="fabricGrid" class="grid"></div>
