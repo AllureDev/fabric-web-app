@@ -87,23 +87,24 @@ function displayFabrics(fabrics, isFilterUpdate = false) {
         return;
     }
 
-const observer = new IntersectionObserver((entries, observer) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            const imageContainer = entry.target;
-            const img = imageContainer.querySelector('img');
-            // Set handlers before assigning src
-            img.onload = () => {
-                imageContainer.classList.add('loaded');
-            };
-            img.onerror = () => {
-                console.error('Image failed to load:', img.dataset.src);
-            };
-            img.src = img.dataset.src;
-            observer.unobserve(imageContainer);
-        }
-    });
-}, { rootMargin: '0px 0px 200px 0px' });
+    const observer = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const imageContainer = entry.target;
+                const img = imageContainer.querySelector('img');
+                img.onload = () => {
+                    imageContainer.classList.add('loaded');
+                };
+                img.onerror = () => {
+                    console.error('Image failed to load:', img.dataset.src);
+                    img.src = PLACEHOLDER_IMAGE; // Fallback to placeholder
+                    imageContainer.classList.add('loaded');
+                };
+                img.src = img.dataset.src;
+                observer.unobserve(imageContainer);
+            }
+        });
+    }, { rootMargin: '0px 0px 200px 0px' });
 
     fabrics.forEach(fabric => {
         if (!fabric.hasValidImage) return;
@@ -114,35 +115,30 @@ const observer = new IntersectionObserver((entries, observer) => {
             card.classList.add('low-stock');
         }
 
-        // Create image container
         const imageContainer = document.createElement('div');
         imageContainer.className = 'image-container';
 
-        // Create placeholder with shimmer effect
         const placeholder = document.createElement('div');
         placeholder.className = 'placeholder shimmer';
 
-        // Create image element
         const img = document.createElement('img');
         img.alt = fabric.Name || 'Fabric';
-        img.style.opacity = '0'; // Initially hidden with opacity
 
         if (isFilterUpdate) {
-            // For filter updates, load image directly
             img.src = fabric.imageLink;
             img.onload = () => {
                 imageContainer.classList.add('loaded');
             };
             img.onerror = () => {
                 console.error('Image failed to load:', img.src);
+                img.src = PLACEHOLDER_IMAGE;
+                imageContainer.classList.add('loaded');
             };
         } else {
-            // For initial load, use lazy loading
             img.dataset.src = fabric.imageLink;
             observer.observe(imageContainer);
         }
 
-        // Assemble the card
         imageContainer.appendChild(placeholder);
         imageContainer.appendChild(img);
         card.appendChild(imageContainer);
@@ -388,7 +384,6 @@ function setupFilterButton() {
                 filterControls.classList.add('hidden');
             }
         } else {
-            // Reset filter state when scrolled back to top
             filterBtn.classList.add('hidden');
             filterControls.classList.remove('hidden');
             filterControls.style.position = 'sticky';
@@ -398,7 +393,7 @@ function setupFilterButton() {
             filterControls.style.width = 'auto';
             filterControls.style.maxWidth = '1400px';
             filterControls.style.zIndex = '1000';
-            isFilterVisible = false; // Reset visibility flag
+            isFilterVisible = false;
             filterBtn.classList.remove('active');
         }
     }
@@ -430,7 +425,6 @@ function setupFilterButton() {
         }
     });
 
-    // Initial state
     filterBtn.classList.add('hidden');
     updateFilterVisibility();
 }
