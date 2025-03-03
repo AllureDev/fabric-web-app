@@ -1,555 +1,564 @@
-/* Reset and Base Styles */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+// Google Sheet JSON URL for "Sample Fabrics"
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1OaLsjBSqyZyGsqN-qnCh-JB4E0QfUlAX_5Rgam5pIkY/gviz/tq?tqx=out:json&sheet=Sample Fabrics';
+
+// Debounce utility
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
 }
 
-body {
-    font-family: 'Poppins', Arial, sans-serif;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    min-height: 100vh;
-    color: #2d3748;
-    line-height: 1.6;
-}
+// Placeholder image (base64 encoded gray square)
+const PLACEHOLDER_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
 
-/* Container */
-.container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 1rem;
-}
+async function fetchFabrics() {
+    try {
+        console.log('Fetching data from:', SHEET_URL);
+        const response = await fetch(SHEET_URL, {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-cache',
+        });
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        const text = await response.text();
+        console.log('Raw response length:', text.length);
 
-/* Header */
-h1 {
-    font-size: 2rem;
-    font-weight: 600;
-    color: #2b6cb0;
-    text-align: center;
-    padding: 1.5rem 0;
-    letter-spacing: 0.5px;
-}
+        const json = JSON.parse(text.slice(47, -2));
+        const rows = json.table.rows;
+        const cols = json.table.cols;
+        console.log('Parsed rows:', rows.length);
 
-/* Controls */
-.controls {
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 12px;
-    padding: 1rem;
-    margin: 1rem 0;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    backdrop-filter: blur(5px);
-}
+        const headerMap = {};
+        cols.forEach((col, index) => {
+            headerMap[col.label] = index;
+        });
 
-/* Hidden State for Filter Panel */
-.controls.hidden {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-    pointer-events: none;
-}
+        const allHeaders = ["SKU", "Type", "Name", "Family", "Colour", "Band Width", "Roll Width", "Schedule", "Status", "Image Link", "Ordering Status"];
 
-/* Filter Wrapper */
-.filter-wrapper {
-    position: relative;
-}
+        const fabrics = rows.map(row => {
+            const fabric = {};
+            allHeaders.forEach(header => {
+                const cellValue = row.c[headerMap[header]];
+                let value = cellValue?.v || '';
+                
+                if (header === "Band Width" && value !== '') {
+                    const stringValue = String(value);
+                    const numericMatch = stringValue.match(/^\d+(\.\d+)?/);
+                    const numericValue = numericMatch ? parseFloat(numericMatch[0]) : '';
+                    fabric[header] = numericValue;
+                } else {
+                    fabric[header] = value;
+                }
+            });
 
-.filter-wrapper label {
-    display: block;
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: #4a5568;
-    margin-bottom: 0.25rem;
-}
+            if (fabric["Image Link"] && typeof fabric["Image Link"] === 'string' && fabric["Image Link"].trim() !== '') {
+                try {
+                    new URL(fabric["Image Link"]);
+                    fabric.hasValidImage = true;
+                    fabric.imageLink = fabric["Image Link"].startsWith('http') ? fabric["Image Link"] : `https://${fabric["Image Link"]}`;
+                } catch (e) {
+                    fabric.hasValidImage = false;
+                    console.warn('Invalid image URL for fabric:', fabric.Name);
+                }
+            } else {
+                fabric.hasValidImage = false;
+                console.warn('No image link provided for fabric:', fabric.Name);
+            }
 
-/* Input and Select Styles */
-#searchInput, #rollWidthFilter {
-    width: 100%;
-    padding: 0.75rem;
-    font-size: 1rem;
-    border: none;
-    border-radius: 8px;
-    background: #edf2f7;
-    color: #4a5568;
-    transition: all 0.3s ease;
-}
+            return fabric;
+        });
 
-#searchInput:focus, #rollWidthFilter:focus {
-    outline: none;
-    background: #fff;
-    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.3);
-}
+        const fabricsWithImages = fabrics.filter(fabric => fabric.hasValidImage);
+        console.log('Fabrics with valid images:', fabricsWithImages.length, 'out of', fabrics.length);
 
-/* Custom Multi-Select */
-.multi-select {
-    position: relative;
-    width: 100%;
-}
-
-.multi-select-toggle {
-    width: 100%;
-    padding: 0.75rem;
-    font-size: 1rem;
-    border: none;
-    border-radius: 8px;
-    background: #edf2f7;
-    color: #4a5568;
-    cursor: pointer;
-    text-align: left;
-    transition: all 0.3s ease;
-}
-
-.multi-select-toggle:focus {
-    outline: none;
-    background: #fff;
-    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.3);
-}
-
-.multi-select-toggle::after {
-    content: '▼';
-    position: absolute;
-    right: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-.multi-select.open .multi-select-toggle::after {
-    content: '▲';
-}
-
-.multi-select-options {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    max-height: 200px;
-    overflow-y: auto;
-    z-index: 1001;
-    display: none;
-}
-
-.multi-select.open .multi-select-options {
-    display: block;
-}
-
-.multi-select-option {
-    padding: 0.5rem 1rem;
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    user-select: none;
-}
-
-.multi-select-option:hover {
-    background: #f7fafc;
-}
-
-.multi-select-option input[type="checkbox"] {
-    margin-right: 0.5rem;
-    cursor: pointer;
-}
-
-.multi-select-option label {
-    flex: 1;
-    cursor: pointer;
-}
-
-.selected-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-}
-
-.selected-tag {
-    background: #2b6cb0;
-    color: #fff;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.85rem;
-    display: flex;
-    align-items: center;
-}
-
-.selected-tag .remove-tag {
-    margin-left: 0.5rem;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-/* Reset Button */
-.reset-btn {
-    padding: 0.75rem;
-    font-size: 1rem;
-    border: none;
-    border-radius: 8px;
-    background: #e53e3e;
-    color: white;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.reset-btn:hover {
-    background: #c53030;
-}
-
-/* Floating Action Button */
-.filter-btn {
-    position: fixed;
-    bottom: 2rem;
-    right: 2rem;
-    width: 60px;
-    height: 60px;
-    background: #2b6cb0;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    cursor: pointer;
-    z-index: 999;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    transform: scale(1);
-}
-
-.filter-btn.hidden {
-    opacity: 0;
-    transform: scale(0);
-    pointer-events: none;
-}
-
-.filter-btn:hover {
-    background: #2c5282;
-    transform: scale(1.05);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
-}
-
-.filter-btn::before {
-    content: '\f0b0';
-    font-family: 'Font Awesome 5 Free';
-    font-weight: 900;
-    color: #fff;
-    font-size: 1.5rem;
-    transition: transform 0.3s ease;
-}
-
-.filter-btn.active::before {
-    transform: rotate(180deg);
-}
-
-/* Grid */
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.25rem;
-    padding: 1rem 0;
-}
-
-/* Fabric Card */
-.fabric-card {
-    background: #fff;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.fabric-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
-}
-
-.image-container {
-    position: relative;
-    width: 100%;
-    height: 200px;
-}
-
-.placeholder {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: #eee;
-    z-index: 1;
-}
-
-.shimmer {
-    background: linear-gradient(90deg, #eee 0%, #f5f5f5 50%, #eee 100%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-}
-
-@keyframes shimmer {
-    0% {
-        background-position: -200% 0;
-    }
-    100% {
-        background-position: 200% 0;
+        window.allFabricData = fabrics;
+        displayFabrics(fabricsWithImages);
+        setupFilters(fabricsWithImages);
+        setupFilterButton();
+    } catch (error) {
+        console.error('Error fetching fabrics:', error);
+        document.getElementById('fabricGrid').innerHTML = '<p>Error loading fabrics. Please try again later or check the console for details.</p>';
     }
 }
 
-.image-container.loaded .placeholder {
-    display: none;
-}
+function displayFabrics(fabrics, isFilterUpdate = false) {
+    const grid = document.getElementById('fabricGrid');
+    grid.innerHTML = '';
 
-.fabric-card img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.image-container.loaded img {
-    opacity: 1;
-}
-
-.fabric-card img[src] {
-    opacity: 1;
-}
-
-.fabric-card p {
-    text-align: center;
-    padding: 0.5rem;
-    width: 100%;
-}
-
-/* Low Stock Highlight */
-.fabric-card.low-stock {
-    border: 2px solid #e53e3e;
-}
-
-/* Modal */
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    padding: 2rem;
-}
-
-.modal-content {
-    background: #fff;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    animation: slideIn 0.3s ease;
-    max-width: min(90vw, 900px);
-    width: 100%;
-    position: relative;
-}
-
-@keyframes slideIn {
-    from { transform: translateY(-20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
-.modal-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-    align-items: start;
-}
-
-.modal-image-section {
-    display: flex;
-    flex-direction: column;
-}
-
-.modal-image-wrapper {
-    position: relative;
-    width: 100%;
-}
-
-.modal-content img {
-    width: 100%;
-    height: auto;
-    max-height: 60vh;
-    object-fit: contain;
-    border-radius: 8px;
-    border: 1px solid #edf2f7;
-}
-
-.magnifier {
-    position: absolute;
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    border: 2px solid #2b6cb0;
-    background-color: rgba(255, 255, 255, 0.2);
-    pointer-events: none;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-    display: none;
-    z-index: 1002;
-    background-repeat: no-repeat;
-    background-size: 400%;
-}
-
-.modal-details-section {
-    padding: 0.5rem;
-}
-
-.modal-content h2 {
-    font-size: 1.5rem;
-    color: #2b6cb0;
-    margin: 0 0 1rem;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    line-height: 1.2;
-}
-
-.details-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-}
-
-.detail-item {
-    display: grid;
-    grid-template-columns: 24px auto 1fr;
-    align-items: center;
-    padding: 0.5rem;
-    background: #f7fafc;
-    border-radius: 6px;
-    transition: background 0.2s ease;
-}
-
-.detail-item:hover {
-    background: #edf2f7;
-}
-
-.detail-item i {
-    color: #2b6cb0;
-    font-size: 1.1rem;
-    margin-right: 0.5rem;
-}
-
-.detail-item strong {
-    font-weight: 500;
-    color: #2d3748;
-    margin-right: 0.75rem;
-}
-
-.detail-item span {
-    color: #4a5568;
-    font-size: 0.95rem;
-}
-
-.low-stock-text {
-    color: #e53e3e;
-    font-weight: 600;
-}
-
-.close {
-    position: absolute;
-    top: 0.75rem;
-    right: 0.75rem;
-    font-size: 1.75rem;
-    color: #718096;
-    cursor: pointer;
-    padding: 0.25rem;
-    transition: color 0.2s, transform 0.2s;
-}
-
-.close:hover {
-    color: #2d3748;
-    transform: scale(1.1);
-}
-
-/* Mobile Styles */
-@media (max-width: 768px) {
-    h1 {
-        font-size: 1.5rem;
+    if (fabrics.length === 0) {
+        grid.innerHTML = '<p>No matching fabrics found.</p>';
+        return;
     }
 
-    .controls {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        padding: 0.5rem;
+    const observer = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const imageContainer = entry.target;
+                const img = imageContainer.querySelector('img');
+                img.onload = () => {
+                    imageContainer.classList.add('loaded');
+                };
+                img.onerror = () => {
+                    console.error('Image failed to load:', img.dataset.src);
+                    img.src = PLACEHOLDER_IMAGE;
+                    imageContainer.classList.add('loaded');
+                };
+                img.src = img.dataset.src;
+                observer.unobserve(imageContainer);
+            }
+        });
+    }, { rootMargin: '0px 0px 200px 0px' });
+
+    fabrics.forEach(fabric => {
+        if (!fabric.hasValidImage) return;
+
+        const card = document.createElement('div');
+        card.className = 'fabric-card';
+        if (fabric["Ordering Status"] === "Low Stock") {
+            card.classList.add('low-stock');
+        }
+
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'image-container';
+
+        const placeholder = document.createElement('div');
+        placeholder.className = 'placeholder shimmer';
+
+        const img = document.createElement('img');
+        img.alt = fabric.Name || 'Fabric';
+
+        if (isFilterUpdate) {
+            img.src = fabric.imageLink;
+            img.onload = () => {
+                imageContainer.classList.add('loaded');
+            };
+            img.onerror = () => {
+                console.error('Image failed to load:', img.src);
+                img.src = PLACEHOLDER_IMAGE;
+                imageContainer.classList.add('loaded');
+            };
+        } else {
+            img.dataset.src = fabric.imageLink;
+            observer.observe(imageContainer);
+        }
+
+        imageContainer.appendChild(placeholder);
+        imageContainer.appendChild(img);
+        card.appendChild(imageContainer);
+
+        const nameP = document.createElement('p');
+        nameP.innerHTML = `<strong>${fabric.Name || 'Unnamed Fabric'}</strong>`;
+        card.appendChild(nameP);
+
+        card.addEventListener('click', () => showFabricDetails(fabric));
+        grid.appendChild(card);
+    });
+}
+
+function showFabricDetails(fabric) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <span class="close">×</span>
+            <div class="modal-grid">
+                <div class="modal-image-section">
+                    <div class="modal-image-wrapper">
+                        <img src="${fabric.imageLink}" alt="${fabric.Name || 'Unnamed Fabric'}">
+                        <div class="magnifier"></div>
+                    </div>
+                </div>
+                <div class="modal-details-section">
+                    <h2>${fabric.Name || 'Unnamed Fabric'}</h2>
+                    <div class="details-grid">
+                        <div class="detail-item">
+                            <i class="fas fa-barcode"></i>
+                            <strong>SKU</strong>
+                            <span>${fabric.SKU || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-tag"></i>
+                            <strong>Type</strong>
+                            <span>${fabric.Type || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-layer-group"></i>
+                            <strong>Family</strong>
+                            <span>${fabric.Family || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-palette"></i>
+                            <strong>Colour</strong>
+                            <span>${fabric.Colour || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-ruler-horizontal"></i>
+                            <strong>Band Width</strong>
+                            <span>${fabric["Band Width"] != null && fabric["Band Width"] !== '' ? fabric["Band Width"] : 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-ruler"></i>
+                            <strong>Roll Width</strong>
+                            <span>${fabric["Roll Width"] || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-calendar-alt"></i>
+                            <strong>Schedule</strong>
+                            <span>${fabric.Schedule || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Status</strong>
+                            <span>${fabric.Status || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-shopping-cart"></i>
+                            <strong>Ordering</strong>
+                            <span class="${fabric['Ordering Status'] === 'Low Stock' ? 'low-stock-text' : ''}">${fabric["Ordering Status"] || 'N/A'}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    const modalImg = modal.querySelector('img');
+    const magnifier = modal.querySelector('.magnifier');
+    const imageWrapper = modal.querySelector('.modal-image-wrapper');
+
+    modalImg.onerror = function() {
+        console.error('Full image failed to load:', this.src);
+        this.src = PLACEHOLDER_IMAGE;
+    };
+
+    let isImageLoaded = false;
+    modalImg.onload = () => {
+        isImageLoaded = true;
+    };
+
+    function updateMagnifier(e, clientX, clientY) {
+        if (!isImageLoaded) return;
+        const rect = modalImg.getBoundingClientRect();
+        const imgWidth = modalImg.offsetWidth;
+        const imgHeight = modalImg.offsetHeight;
+        const mouseX = clientX - rect.left;
+        const mouseY = clientY - rect.top;
+
+        if (mouseX < 0 || mouseY < 0 || mouseX > imgWidth || mouseY > imgHeight) {
+            magnifier.style.display = 'none';
+            return;
+        }
+
+        magnifier.style.display = 'block';
+        const sizePercentage = 0.2;
+        let magWidth = imgWidth * sizePercentage;
+        let magHeight = imgHeight * sizePercentage;
+        const minSize = 100;
+        const maxSize = 300;
+        magWidth = Math.max(minSize, Math.min(maxSize, magWidth));
+        magHeight = Math.max(minSize, Math.min(maxSize, magHeight));
+
+        magnifier.style.width = `${magWidth}px`;
+        magnifier.style.height = `${magHeight}px`;
+
+        const zoomFactor = 2;
+        let magX = mouseX - magWidth / 2;
+        let magY = mouseY - magHeight / 2;
+        magX = Math.max(0, Math.min(magX, imgWidth - magWidth));
+        magY = Math.max(0, Math.min(magY, imgHeight - magHeight));
+
+        magnifier.style.left = `${magX}px`;
+        magnifier.style.top = `${magY}px`;
+
+        const bgX = -((mouseX / imgWidth) * (imgWidth * zoomFactor) - magWidth / 2);
+        const bgY = -((mouseY / imgHeight) * (imgHeight * zoomFactor) - magHeight / 2);
+        magnifier.style.backgroundImage = `url('${modalImg.src}')`;
+        magnifier.style.backgroundPosition = `${bgX}px ${bgY}px`;
+        magnifier.style.backgroundSize = `${imgWidth * zoomFactor}px ${imgHeight * zoomFactor}px`;
     }
 
-    .filter-wrapper {
-        margin-bottom: 0.5rem;
+    imageWrapper.addEventListener('mousemove', (e) => {
+        updateMagnifier(e, e.clientX, e.clientY);
+    });
+    imageWrapper.addEventListener('mouseleave', () => {
+        magnifier.style.display = 'none';
+    });
+    imageWrapper.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        updateMagnifier(e, touch.clientX, touch.clientY);
+    });
+    imageWrapper.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        updateMagnifier(e, touch.clientX, touch.clientY);
+    });
+    imageWrapper.addEventListener('touchend', () => {
+        magnifier.style.display = 'none';
+    });
+
+    modal.querySelector('.close').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+    });
+}
+
+function setupFilters(fabricsWithImages) {
+    const searchInput = document.getElementById('searchInput');
+    const rollWidthFilter = document.getElementById('rollWidthFilter');
+    const resetFilters = document.getElementById('resetFilters');
+
+    const filterControls = document.getElementById('filterControls');
+    const filters = [
+        { id: 'typeFilter', label: 'Type', key: 'Type' },
+        { id: 'familyFilter', label: 'Family', key: 'Family' },
+        { id: 'colourFilter', label: 'Colour', key: 'Colour' },
+        { id: 'bandWidthFilter', label: 'Band Width', key: 'Band Width' },
+        { id: 'scheduleFilter', label: 'Schedule', key: 'Schedule' },
+        { id: 'statusFilter', label: 'Status', key: 'Status' }
+    ];
+
+    const filterValues = {};
+    filters.forEach(f => {
+        if (f.key === 'Band Width') {
+            filterValues[f.id] = [...new Set(fabricsWithImages
+                .map(fabric => fabric[f.key])
+                .filter(v => v !== '' && !isNaN(v)))]
+                .sort((a, b) => a - b);
+        } else {
+            filterValues[f.id] = [...new Set(fabricsWithImages.map(fabric => String(fabric[f.key] || '')))].filter(Boolean);
+        }
+    });
+
+    filters.forEach(filter => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'filter-wrapper';
+
+        const label = document.createElement('label');
+        label.textContent = filter.label;
+        label.setAttribute('for', filter.id);
+
+        const multiSelect = document.createElement('div');
+        multiSelect.className = 'multi-select';
+        multiSelect.id = filter.id;
+
+        const toggle = document.createElement('button');
+        toggle.className = 'multi-select-toggle';
+        toggle.textContent = `Select ${filter.label}`;
+        toggle.type = 'button';
+
+        const options = document.createElement('div');
+        options.className = 'multi-select-options';
+
+        const tags = document.createElement('div');
+        tags.className = 'selected-tags';
+
+        filterValues[filter.id].forEach(value => {
+            const option = document.createElement('div');
+            option.className = 'multi-select-option';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = value;
+            checkbox.id = `${filter.id}-${String(value).replace(/\s+/g, '-')}`;
+            checkbox.style.display = 'none';
+
+            const optionLabel = document.createElement('label');
+            optionLabel.textContent = value;
+            optionLabel.setAttribute('for', checkbox.id);
+            optionLabel.style.cursor = 'pointer';
+
+            option.appendChild(checkbox);
+            option.appendChild(optionLabel);
+            options.appendChild(option);
+        });
+
+        multiSelect.appendChild(toggle);
+        multiSelect.appendChild(options);
+        multiSelect.appendChild(tags);
+        wrapper.appendChild(label);
+        wrapper.appendChild(multiSelect);
+
+        filterControls.insertBefore(wrapper, rollWidthFilter.parentNode);
+    });
+
+    function filterFabrics() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const rollWidthValue = parseFloat(rollWidthFilter.value) || 0;
+
+        const selectedValues = {};
+        filters.forEach(filter => {
+            selectedValues[filter.key] = Array.from(
+                document.querySelectorAll(`#${filter.id} .multi-select-option input:checked`)
+            ).map(input => filter.key === 'Band Width' ? parseFloat(input.value) : input.value);
+        });
+
+        const filtered = fabricsWithImages.filter(fabric => {
+            const rollWidthNum = parseFloat(fabric["Roll Width"]) || 0;
+            const bandWidthValue = fabric["Band Width"];
+            const nameMatch = fabric.Name.toLowerCase().includes(searchTerm) || fabric.SKU.toLowerCase().includes(searchTerm);
+
+            return (
+                nameMatch &&
+                (selectedValues["Type"].length === 0 || selectedValues["Type"].includes(fabric.Type)) &&
+                (selectedValues["Family"].length === 0 || selectedValues["Family"].includes(fabric.Family)) &&
+                (selectedValues["Colour"].length === 0 || selectedValues["Colour"].includes(fabric.Colour)) &&
+                (selectedValues["Band Width"].length === 0 || selectedValues["Band Width"].includes(bandWidthValue)) &&
+                (rollWidthValue === 0 || rollWidthNum >= rollWidthValue) &&
+                (selectedValues["Schedule"].length === 0 || selectedValues["Schedule"].includes(fabric.Schedule)) &&
+                (selectedValues["Status"].length === 0 || selectedValues["Status"].includes(fabric.Status))
+            );
+        });
+
+        displayFabrics(filtered, true);
     }
 
-    .multi-select-options {
-        max-height: 150px;
-        width: 100%;
-        max-width: none;
+    function resetAllFilters() {
+        searchInput.value = '';
+        rollWidthFilter.value = '';
+        filters.forEach(filter => {
+            const checkboxes = document.querySelectorAll(`#${filter.id} .multi-select-option input`);
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            const tags = document.querySelector(`#${filter.id} .selected-tags`);
+            tags.innerHTML = '';
+            const toggle = document.querySelector(`#${filter.id} .multi-select-toggle`);
+            toggle.textContent = `Select ${filter.label}`;
+        });
+        filterFabrics();
     }
 
-    .multi-select-toggle {
-        font-size: 0.9rem;
-        padding: 0.5rem;
-    }
+    const debouncedFilterFabrics = debounce(filterFabrics, 300);
 
-    .selected-tags {
-        margin-top: 0.25rem;
-    }
+    searchInput.addEventListener('input', debouncedFilterFabrics);
+    rollWidthFilter.addEventListener('input', debouncedFilterFabrics);
+    resetFilters.addEventListener('click', resetAllFilters);
 
-    .selected-tag {
-        font-size: 0.75rem;
-        padding: 0.2rem 0.4rem;
-    }
+    filters.forEach(filter => {
+        const multiSelect = document.getElementById(filter.id);
+        const toggle = multiSelect.querySelector('.multi-select-toggle');
+        const options = multiSelect.querySelector('.multi-select-options');
+        const tags = multiSelect.querySelector('.selected-tags');
 
-    .grid {
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 1rem;
-    }
+        toggle.addEventListener('click', () => {
+            multiSelect.classList.toggle('open');
+        });
 
-    .image-container {
-        height: 180px;
-    }
+        options.addEventListener('click', (e) => {
+            const option = e.target.closest('.multi-select-option');
+            if (!option) return;
 
-    .modal {
-        padding: 1rem;
-    }
+            const checkbox = option.querySelector('input[type="checkbox"]');
+            const label = option.querySelector('label');
+            if (e.target === label || option.contains(e.target)) {
+                checkbox.checked = !checkbox.checked;
 
-    .modal-grid {
-        grid-template-columns: 1fr;
-    }
+                const value = checkbox.value;
+                const isChecked = checkbox.checked;
+                const existingTag = Array.from(tags.children).find(t => t.dataset.value === value);
 
-    .modal-content {
-        padding: 1rem;
-        max-width: 95vw;
-    }
+                if (isChecked && !existingTag) {
+                    const tag = document.createElement('span');
+                    tag.className = 'selected-tag';
+                    tag.dataset.value = value;
+                    tag.textContent = `${value} ×`;
+                    tag.addEventListener('click', () => {
+                        checkbox.checked = false;
+                        tag.remove();
+                        updateToggleText(filter.id, filter.label);
+                        filterFabrics();
+                    });
+                    tags.appendChild(tag);
+                } else if (!isChecked && existingTag) {
+                    existingTag.remove();
+                }
 
-    .modal-content h2 {
-        font-size: 1.25rem;
-        margin-bottom: 0.75rem;
-    }
+                updateToggleText(filter.id, filter.label);
+                filterFabrics();
+            }
+        });
 
-    .detail-item {
-        padding: 0.4rem;
-        font-size: 0.9rem;
-    }
+        document.addEventListener('click', (e) => {
+            if (!multiSelect.contains(e.target)) {
+                multiSelect.classList.remove('open');
+            }
+        });
+    });
 
-    .detail-item i {
-        font-size: 1rem;
-    }
-
-    .modal-content img {
-        max-height: 50vh;
+    function updateToggleText(filterId, label) {
+        const selected = Array.from(document.querySelectorAll(`#${filterId} .multi-select-option input:checked`));
+        const toggle = document.querySelector(`#${filterId} .multi-select-toggle`);
+        toggle.textContent = selected.length > 0 ? `${selected.length} ${label} selected` : `Select ${filter.label}`;
     }
 }
+
+function setupFilterButton() {
+    const filterBtn = document.getElementById('filterBtn');
+    const filterControls = document.getElementById('filterControls');
+    let isFilterVisible = false;
+    const headerHeight = document.querySelector('h1').offsetHeight;
+    const BUFFER_ZONE = 200;
+
+    function updateFilterVisibility() {
+        const scrollPosition = window.scrollY;
+
+        if (scrollPosition > headerHeight + BUFFER_ZONE) {
+            filterBtn.classList.remove('hidden');
+            if (!isFilterVisible) {
+                filterControls.classList.add('hidden');
+            }
+        } else {
+            filterBtn.classList.add('hidden');
+            filterControls.classList.remove('hidden');
+            filterControls.style.position = 'sticky';
+            filterControls.style.top = '0';
+            filterControls.style.left = 'auto';
+            filterControls.style.transform = 'translateX(0)';
+            filterControls.style.width = 'auto';
+            filterControls.style.maxWidth = '1400px';
+            filterControls.style.zIndex = '1000';
+            isFilterVisible = false;
+            filterBtn.classList.remove('active');
+        }
+    }
+
+    const debouncedScrollHandler = debounce(updateFilterVisibility, 100);
+    window.addEventListener('scroll', debouncedScrollHandler);
+
+    filterBtn.addEventListener('click', () => {
+        isFilterVisible = !isFilterVisible;
+
+        if (isFilterVisible) {
+            filterControls.classList.remove('hidden');
+            filterControls.style.position = 'fixed';
+            filterControls.style.top = '1rem';
+            filterControls.style.left = '50%';
+            filterControls.style.transform = 'translateX(-50%)';
+            filterControls.style.width = 'calc(100% - 2rem)';
+            filterControls.style.maxWidth = '1400px';
+            filterControls.style.zIndex = '1001';
+            filterBtn.classList.add('active');
+        } else {
+            filterControls.classList.add('hidden');
+            filterControls.style.position = 'sticky';
+            filterControls.style.top = '0';
+            filterControls.style.left = 'auto';
+            filterControls.style.transform = 'translateX(0)';
+            filterControls.style.width = 'auto';
+            filterBtn.classList.remove('active');
+        }
+    });
+
+    filterBtn.classList.add('hidden');
+    updateFilterVisibility();
+}
+
+fetchFabrics();
