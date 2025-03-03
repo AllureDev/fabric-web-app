@@ -14,6 +14,9 @@ function debounce(func, wait) {
     };
 }
 
+// Placeholder image (base64 encoded gray square)
+const PLACEHOLDER_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+
 async function fetchFabrics() {
     try {
         console.log('Fetching data from:', SHEET_URL);
@@ -81,6 +84,17 @@ function displayFabrics(fabrics) {
         return;
     }
 
+    const observer = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const img = entry.target;
+                img.src = img.dataset.src;
+                img.classList.remove('placeholder');
+                observer.unobserve(img);
+            }
+        });
+    }, { rootMargin: '0px 0px 200px 0px' });
+
     fabrics.forEach(fabric => {
         if (!fabric.hasValidImage) return;
         
@@ -91,11 +105,14 @@ function displayFabrics(fabrics) {
         }
 
         const img = document.createElement('img');
-        img.src = fabric.imageLink;
+        img.src = PLACEHOLDER_IMAGE;
+        img.dataset.src = fabric.imageLink;
         img.alt = fabric.Name || 'Fabric';
+        img.className = 'placeholder';
         
         img.onerror = function() {
-            console.error('Image failed to load despite validation:', this.src);
+            console.error('Image failed to load:', this.dataset.src);
+            this.src = PLACEHOLDER_IMAGE;
             card.remove();
         };
 
@@ -108,6 +125,7 @@ function displayFabrics(fabrics) {
         card.addEventListener('click', () => showFabricDetails(fabric));
 
         grid.appendChild(card);
+        observer.observe(img);
     });
 }
 
@@ -117,7 +135,7 @@ function showFabricDetails(fabric) {
     modal.innerHTML = `
         <div class="modal-content">
             <span class="close">×</span>
-            <img src="${fabric.imageLink}" alt="${fabric.Name}" style="max-width:100%;">
+            <img src="${PLACEHOLDER_IMAGE}" data-src="${fabric.imageLink}" alt="${fabric.Name}" style="max-width:100%;">
             <h2>${fabric.Name || 'Unnamed Fabric'}</h2>
             <p><strong>SKU:</strong> ${fabric.SKU || 'N/A'}</p>
             <p><strong>Type:</strong> ${fabric.Type || 'N/A'}</p>
@@ -132,6 +150,14 @@ function showFabricDetails(fabric) {
     `;
     document.body.appendChild(modal);
 
+    const modalImg = modal.querySelector('img');
+    modalImg.src = modalImg.dataset.src;
+
+    modalImg.onerror = function() {
+        console.error('Full image failed to load:', this.dataset.src);
+        this.src = PLACEHOLDER_IMAGE;
+    };
+
     modal.querySelector('.close').addEventListener('click', () => modal.remove());
     modal.addEventListener('click', (e) => {
         if (e.target === modal) modal.remove();
@@ -140,45 +166,84 @@ function showFabricDetails(fabric) {
 
 function setupFilters(fabricsWithImages) {
     const searchInput = document.getElementById('searchInput');
-    const typeFilter = document.getElementById('typeFilter');
-    const familyFilter = document.getElementById('familyFilter');
-    const colourFilter = document.getElementById('colourFilter');
-    const bandWidthFilter = document.getElementById('bandWidthFilter');
     const rollWidthFilter = document.getElementById('rollWidthFilter');
-    const scheduleFilter = document.getElementById('scheduleFilter');
-    const statusFilter = document.getElementById('statusFilter');
     const resetFilters = document.getElementById('resetFilters');
 
-    const types = [...new Set(fabricsWithImages.map(f => String(f.Type || '')))].filter(Boolean);
-    const families = [...new Set(fabricsWithImages.map(f => String(f.Family || '')))].filter(Boolean);
-    const colours = [...new Set(fabricsWithImages.map(f => String(f.Colour || '')))].filter(Boolean);
-    const bandWidths = [...new Set(fabricsWithImages.map(f => String(f["Band Width"] || '')))].filter(Boolean);
-    const schedules = [...new Set(fabricsWithImages.map(f => String(f.Schedule || '')))].filter(Boolean);
-    const statuses = [...new Set(fabricsWithImages.map(f => String(f.Status || '')))].filter(Boolean);
+    const filterControls = document.getElementById('filterControls');
+    const filters = [
+        { id: 'typeFilter', label: 'Type', key: 'Type' },
+        { id: 'familyFilter', label: 'Family', key: 'Family' },
+        { id: 'colourFilter', label: 'Colour', key: 'Colour' },
+        { id: 'bandWidthFilter', label: 'Band Width', key: 'Band Width' },
+        { id: 'scheduleFilter', label: 'Schedule', key: 'Schedule' },
+        { id: 'statusFilter', label: 'Status', key: 'Status' }
+    ];
 
-    typeFilter.multiple = true;
-    familyFilter.multiple = true;
-    colourFilter.multiple = true;
-    bandWidthFilter.multiple = true;
-    scheduleFilter.multiple = true;
-    statusFilter.multiple = true;
+    const filterValues = {};
+    filters.forEach(f => {
+        filterValues[f.id] = [...new Set(fabricsWithImages.map(fabric => String(fabric[f.key] || '')))].filter(Boolean);
+    });
 
-    typeFilter.innerHTML = types.map(t => `<option value="${t}">${t}</option>`).join('');
-    familyFilter.innerHTML = families.map(f => `<option value="${f}">${f}</option>`).join('');
-    colourFilter.innerHTML = colours.map(c => `<option value="${c}">${c}</option>`).join('');
-    bandWidthFilter.innerHTML = bandWidths.map(b => `<option value="${b}">${b}</option>`).join('');
-    scheduleFilter.innerHTML = schedules.map(s => `<option value="${s}">${s}</option>`).join('');
-    statusFilter.innerHTML = statuses.map(s => `<option value="${s}">${s}</option>`).join('');
+    filters.forEach(filter => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'filter-wrapper';
+
+        const label = document.createElement('label');
+        label.textContent = filter.label;
+        label.setAttribute('for', filter.id);
+
+        const multiSelect = document.createElement('div');
+        multiSelect.className = 'multi-select';
+        multiSelect.id = filter.id;
+
+        const toggle = document.createElement('button');
+        toggle.className = 'multi-select-toggle';
+        toggle.textContent = `Select ${filter.label}`;
+        toggle.type = 'button';
+
+        const options = document.createElement('div');
+        options.className = 'multi-select-options';
+
+        const tags = document.createElement('div');
+        tags.className = 'selected-tags';
+
+        filterValues[filter.id].forEach(value => {
+            const option = document.createElement('div');
+            option.className = 'multi-select-option';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = value;
+            checkbox.id = `${filter.id}-${value.replace(/\s+/g, '-')}`;
+
+            const optionLabel = document.createElement('label');
+            optionLabel.textContent = value;
+            optionLabel.setAttribute('for', checkbox.id);
+
+            option.appendChild(checkbox);
+            option.appendChild(optionLabel);
+            options.appendChild(option);
+        });
+
+        multiSelect.appendChild(toggle);
+        multiSelect.appendChild(options);
+        multiSelect.appendChild(tags);
+        wrapper.appendChild(label);
+        wrapper.appendChild(multiSelect);
+
+        filterControls.insertBefore(wrapper, rollWidthFilter.parentNode);
+    });
 
     function filterFabrics() {
         const searchTerm = searchInput.value.toLowerCase();
-        const selectedTypes = Array.from(typeFilter.selectedOptions).map(opt => opt.value);
-        const selectedFamilies = Array.from(familyFilter.selectedOptions).map(opt => opt.value);
-        const selectedColours = Array.from(colourFilter.selectedOptions).map(opt => opt.value);
-        const selectedBandWidths = Array.from(bandWidthFilter.selectedOptions).map(opt => opt.value);
         const rollWidthValue = parseFloat(rollWidthFilter.value) || 0;
-        const selectedSchedules = Array.from(scheduleFilter.selectedOptions).map(opt => opt.value);
-        const selectedStatuses = Array.from(statusFilter.selectedOptions).map(opt => opt.value);
+
+        const selectedValues = {};
+        filters.forEach(filter => {
+            selectedValues[filter.key] = Array.from(
+                document.querySelectorAll(`#${filter.id} .multi-select-option input:checked`)
+            ).map(input => input.value);
+        });
 
         const filtered = fabricsWithImages.filter(fabric => {
             const rollWidthNum = parseFloat(fabric["Roll Width"]) || 0;
@@ -187,13 +252,13 @@ function setupFilters(fabricsWithImages) {
 
             return (
                 nameMatch &&
-                (selectedTypes.length === 0 || selectedTypes.includes(fabric.Type)) &&
-                (selectedFamilies.length === 0 || selectedFamilies.includes(fabric.Family)) &&
-                (selectedColours.length === 0 || selectedColours.includes(fabric.Colour)) &&
-                (selectedBandWidths.length === 0 || selectedBandWidths.includes(bandWidthValue)) &&
+                (selectedValues["Type"].length === 0 || selectedValues["Type"].includes(fabric.Type)) &&
+                (selectedValues["Family"].length === 0 || selectedValues["Family"].includes(fabric.Family)) &&
+                (selectedValues["Colour"].length === 0 || selectedValues["Colour"].includes(fabric.Colour)) &&
+                (selectedValues["Band Width"].length === 0 || selectedValues["Band Width"].includes(bandWidthValue)) &&
                 (rollWidthValue === 0 || rollWidthNum >= rollWidthValue) &&
-                (selectedSchedules.length === 0 || selectedSchedules.includes(fabric.Schedule)) &&
-                (selectedStatuses.length === 0 || selectedStatuses.includes(fabric.Status))
+                (selectedValues["Schedule"].length === 0 || selectedValues["Schedule"].includes(fabric.Schedule)) &&
+                (selectedValues["Status"].length === 0 || selectedValues["Status"].includes(fabric.Status))
             );
         });
 
@@ -202,27 +267,79 @@ function setupFilters(fabricsWithImages) {
 
     function resetAllFilters() {
         searchInput.value = '';
-        typeFilter.selectedIndex = -1;
-        familyFilter.selectedIndex = -1;
-        colourFilter.selectedIndex = -1;
-        bandWidthFilter.selectedIndex = -1;
         rollWidthFilter.value = '';
-        scheduleFilter.selectedIndex = -1;
-        statusFilter.selectedIndex = -1;
+        filters.forEach(filter => {
+            const checkboxes = document.querySelectorAll(`#${filter.id} .multi-select-option input`);
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            const tags = document.querySelector(`#${filter.id} .selected-tags`);
+            tags.innerHTML = '';
+            const toggle = document.querySelector(`#${filter.id} .multi-select-toggle`);
+            toggle.textContent = `Select ${filter.label}`;
+        });
         filterFabrics();
     }
 
     const debouncedFilterFabrics = debounce(filterFabrics, 300);
 
     searchInput.addEventListener('input', debouncedFilterFabrics);
-    typeFilter.addEventListener('change', debouncedFilterFabrics);
-    familyFilter.addEventListener('change', debouncedFilterFabrics);
-    colourFilter.addEventListener('change', debouncedFilterFabrics);
-    bandWidthFilter.addEventListener('change', debouncedFilterFabrics);
     rollWidthFilter.addEventListener('input', debouncedFilterFabrics);
-    scheduleFilter.addEventListener('change', debouncedFilterFabrics);
-    statusFilter.addEventListener('change', debouncedFilterFabrics);
     resetFilters.addEventListener('click', resetAllFilters);
+
+    filters.forEach(filter => {
+        const multiSelect = document.getElementById(filter.id);
+        const toggle = multiSelect.querySelector('.multi-select-toggle');
+        const options = multiSelect.querySelector('.multi-select-options');
+        const tags = multiSelect.querySelector('.selected-tags');
+
+        toggle.addEventListener('click', () => {
+            multiSelect.classList.toggle('open');
+        });
+
+        options.addEventListener('click', (e) => {
+            const checkbox = e.target.closest('input[type="checkbox"]');
+            if (!checkbox) return;
+
+            const value = checkbox.value;
+            const isChecked = checkbox.checked;
+
+            if (isChecked) {
+                const tag = document.createElement('span');
+                tag.className = 'selected-tag';
+                tag.textContent = value;
+                const remove = document.createElement('span');
+                remove.className = 'remove-tag';
+                remove.textContent = '×';
+                remove.addEventListener('click', () => {
+                    checkbox.checked = false;
+                    tag.remove();
+                    updateToggleText(filter.id, filter.label);
+                    filterFabrics();
+                });
+                tag.appendChild(remove);
+                tags.appendChild(tag);
+            } else {
+                const tag = Array.from(tags.children).find(t => t.textContent.startsWith(value));
+                if (tag) tag.remove();
+            }
+
+            updateToggleText(filter.id, filter.label);
+            filterFabrics();
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!multiSelect.contains(e.target)) {
+                multiSelect.classList.remove('open');
+            }
+        });
+    });
+
+    function updateToggleText(filterId, label) {
+        const selected = Array.from(document.querySelectorAll(`#${filterId} .multi-select-option input:checked`));
+        const toggle = document.querySelector(`#${filterId} .multi-select-toggle`);
+        toggle.textContent = selected.length > 0 ? `${selected.length} ${label} selected` : `Select ${label}`;
+    }
 }
 
 function setupFilterButton() {
@@ -230,7 +347,7 @@ function setupFilterButton() {
     const filterControls = document.getElementById('filterControls');
     let isHidden = false;
     let lastShownPosition = 0;
-    const BUFFER_ZONE = 200; // Pixels of scroll buffer before hiding
+    const BUFFER_ZONE = 200;
 
     const debouncedScrollHandler = debounce(() => {
         const scrollPosition = window.scrollY;
