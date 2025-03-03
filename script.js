@@ -172,15 +172,17 @@ function showFabricDetails(fabric) {
                 <div class="magnifier"></div>
             </div>
             <h2>${fabric.Name || 'Unnamed Fabric'}</h2>
-            <p><strong>SKU:</strong> ${fabric.SKU || 'N/A'}</p>
-            <p><strong>Type:</strong> ${fabric.Type || 'N/A'}</p>
-            <p><strong>Family:</strong> ${fabric.Family || 'N/A'}</p>
-            <p><strong>Colour:</strong> ${fabric.Colour || 'N/A'}</p>
-            <p><strong>Band Width:</strong> ${fabric["Band Width"] != null && fabric["Band Width"] !== '' ? fabric["Band Width"] : 'N/A'}</p>
-            <p><strong>Roll Width:</strong> ${fabric["Roll Width"] || 'N/A'}</p>
-            <p><strong>Schedule:</strong> ${fabric.Schedule || 'N/A'}</p>
-            <p><strong>Status:</strong> ${fabric.Status || 'N/A'}</p>
-            <p><strong>Ordering Status:</strong> ${fabric["Ordering Status"] || 'N/A'}</p>
+            <div class="details">
+                <strong>SKU:</strong> <span>${fabric.SKU || 'N/A'}</span>
+                <strong>Type:</strong> <span>${fabric.Type || 'N/A'}</span>
+                <strong>Family:</strong> <span>${fabric.Family || 'N/A'}</span>
+                <strong>Colour:</strong> <span>${fabric.Colour || 'N/A'}</span>
+                <strong>Band Width:</strong> <span>${fabric["Band Width"] != null && fabric["Band Width"] !== '' ? fabric["Band Width"] : 'N/A'}</span>
+                <strong>Roll Width:</strong> <span>${fabric["Roll Width"] || 'N/A'}</span>
+                <strong>Schedule:</strong> <span>${fabric.Schedule || 'N/A'}</span>
+                <strong>Status:</strong> <span>${fabric.Status || 'N/A'}</span>
+                <strong>Ordering:</strong> <span>${fabric["Ordering Status"] || 'N/A'}</span>
+            </div>
         </div>
     `;
     document.body.appendChild(modal);
@@ -189,7 +191,6 @@ function showFabricDetails(fabric) {
     const magnifier = modal.querySelector('.magnifier');
     const imageWrapper = modal.querySelector('.modal-image-wrapper');
 
-    // Handle image load/error
     modalImg.onerror = function() {
         console.error('Full image failed to load:', this.src);
         this.src = PLACEHOLDER_IMAGE;
@@ -198,13 +199,6 @@ function showFabricDetails(fabric) {
     let isImageLoaded = false;
     modalImg.onload = () => {
         isImageLoaded = true;
-        // Adjust modal size to fit image
-        const naturalWidth = modalImg.naturalWidth;
-        const naturalHeight = modalImg.naturalHeight;
-        const maxWidth = Math.min(naturalWidth, window.innerWidth * 0.95);
-        const maxHeight = Math.min(naturalHeight + 150, window.innerHeight * 0.95); // +150 for text content
-        modal.querySelector('.modal-content').style.width = `${maxWidth}px`;
-        modal.querySelector('.modal-content').style.height = `${maxHeight}px`;
     };
 
     // Magnifier Logic
@@ -270,7 +264,6 @@ function showFabricDetails(fabric) {
         magnifier.style.display = 'none';
     });
 
-    // Close modal
     modal.querySelector('.close').addEventListener('click', () => modal.remove());
     modal.addEventListener('click', (e) => {
         if (e.target === modal) modal.remove();
