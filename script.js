@@ -168,7 +168,10 @@ function showFabricDetails(fabric) {
     modal.innerHTML = `
         <div class="modal-content">
             <span class="close">×</span>
-            <img src="${fabric.imageLink}" alt="${fabric.Name}" style="max-width:100%;">
+            <div class="modal-image-wrapper">
+                <img src="${fabric.imageLink}" alt="${fabric.Name}">
+                <div class="magnifier"></div>
+            </div>
             <h2>${fabric.Name || 'Unnamed Fabric'}</h2>
             <p><strong>SKU:</strong> ${fabric.SKU || 'N/A'}</p>
             <p><strong>Type:</strong> ${fabric.Type || 'N/A'}</p>
@@ -184,11 +187,63 @@ function showFabricDetails(fabric) {
     document.body.appendChild(modal);
 
     const modalImg = modal.querySelector('img');
+    const magnifier = modal.querySelector('.magnifier');
+    const imageWrapper = modal.querySelector('.modal-image-wrapper');
+
+    // Handle image load/error
     modalImg.onerror = function() {
         console.error('Full image failed to load:', this.src);
         this.src = PLACEHOLDER_IMAGE;
     };
 
+    // Magnifying Glass Logic
+    let isImageLoaded = false;
+    modalImg.onload = () => {
+        isImageLoaded = true;
+    };
+
+    imageWrapper.addEventListener('mousemove', (e) => {
+        if (!isImageLoaded) return;
+
+        const rect = modalImg.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        // Check if mouse is within image bounds
+        if (mouseX < 0 || mouseY < 0 || mouseX > rect.width || mouseY > rect.height) {
+            magnifier.style.display = 'none';
+            return;
+        }
+
+        magnifier.style.display = 'block';
+
+        // Magnifier dimensions
+        const magWidth = magnifier.offsetWidth;
+        const magHeight = magnifier.offsetHeight;
+
+        // Position magnifier
+        let magX = mouseX - magWidth / 2;
+        let magY = mouseY - magHeight / 2;
+
+        // Keep magnifier within image bounds
+        magX = Math.max(0, Math.min(magX, rect.width - magWidth));
+        magY = Math.max(0, Math.min(magY, rect.height - magHeight));
+
+        magnifier.style.left = `${magX}px`;
+        magnifier.style.top = `${magY}px`;
+
+        // Calculate background position for zoom effect
+        const bgX = -(mouseX * 4 - magWidth / 2); // 4x zoom factor
+        const bgY = -(mouseY * 4 - magHeight / 2);
+        magnifier.style.backgroundImage = `url('${modalImg.src}')`;
+        magnifier.style.backgroundPosition = `${bgX}px ${bgY}px`;
+    });
+
+    imageWrapper.addEventListener('mouseleave', () => {
+        magnifier.style.display = 'none';
+    });
+
+    // Close modal
     modal.querySelector('.close').addEventListener('click', () => modal.remove());
     modal.addEventListener('click', (e) => {
         if (e.target === modal) modal.remove();
