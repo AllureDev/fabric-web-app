@@ -355,14 +355,14 @@ h1 {
     background: #fff;
     border-radius: 12px;
     padding: 1.5rem;
-    width: 80vw; /* Set width relative to viewport width */
-    max-width: 1000px; /* Increase max-width for larger screens */
-    height: 85vh; /* Set height relative to viewport height */
-    max-height: 95vh; /* Ensure it fits within viewport with some margin */
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     animation: slideIn 0.3s ease;
-    position: relative; /* For positioning magnifier */
+    position: relative;
+    max-width: 95vw;
+    max-height: 95vh;
+    overflow-y: auto;
 }
 
 @keyframes slideIn {
@@ -373,15 +373,15 @@ h1 {
 .modal-image-wrapper {
     position: relative;
     width: 100%;
-    height: 70%; /* Allocate majority of modal height to image */
-    overflow: hidden;
-    margin-bottom: 1rem;
+    flex-shrink: 0;
 }
 
 .modal-content img {
     width: 100%;
-    height: 100%;
-    object-fit: contain; /* Ensure image fits without cropping */
+    height: auto;
+    max-width: 100%;
+    max-height: 80vh; /* Ensure image doesn’t exceed viewport height */
+    object-fit: contain;
     border-radius: 8px;
     display: block;
 }
@@ -393,12 +393,12 @@ h1 {
     border-radius: 50%;
     border: 2px solid #2b6cb0;
     background-color: rgba(255, 255, 255, 0.2);
-    pointer-events: none; /* Prevent interference with mouse events */
+    pointer-events: none;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-    display: none; /* Hidden by default */
+    display: none;
     z-index: 1002;
     background-repeat: no-repeat;
-    background-size: 400%; /* Adjust zoom level (400% = 4x zoom) */
+    background-size: 400%; /* 4x zoom */
 }
 
 .close {
@@ -418,7 +418,7 @@ h1 {
 .modal-content h2 {
     font-size: 1.5rem;
     color: #2b6cb0;
-    margin-bottom: 0.5rem;
+    margin: 0.5rem 0;
 }
 
 .modal-content p {
@@ -436,9 +436,6 @@ h1 {
     .controls {
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
         padding: 0.5rem;
-        position: sticky;
-        top: 0;
-        z-index: 1000;
     }
 
     .filter-wrapper {
@@ -449,8 +446,6 @@ h1 {
         max-height: 150px;
         width: 100%;
         max-width: none;
-        position: absolute;
-        z-index: 1001;
     }
 
     .multi-select-toggle {
@@ -477,18 +472,12 @@ h1 {
     }
 
     .modal-content {
-        width: 90vw; /* Wider on mobile */
-        height: 90vh; /* Taller on mobile */
         padding: 1rem;
-    }
-
-    .modal-image-wrapper {
-        height: 60%; /* Slightly less height for image on mobile */
     }
 
     .magnifier {
         width: 100px;
-        height: 100px; /* Smaller magnifier on mobile */
+        height: 100px;
     }
 
     .modal-content h2 {
