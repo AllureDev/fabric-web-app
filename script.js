@@ -250,9 +250,9 @@ function showFabricDetails(fabric) {
         fullModal.style.zIndex = '3000'; // Higher z-index for full view
         fullModal.style.background = 'rgba(0, 0, 0, 0.9)';
         fullModal.innerHTML = `
-            <div class="modal-content" style="width: auto; max-width: 95vw; max-height: 95vh; padding: 0; background: none;">
+            <div class="modal-content" style="width: auto; height: auto; padding: 2rem; background: none; overflow: hidden;">
                 <span class="close" style="color: white; top: 10px; right: 10px;">×</span>
-                <img src="${fabric.imageLink}" style="max-width: 100%; max-height: 90vh; object-fit: contain;">
+                <img src="${fabric.imageLink}" style="max-width: 80vw; max-height: 80vh; object-fit: contain;">
             </div>
         `;
         document.body.appendChild(fullModal);
@@ -552,8 +552,8 @@ function setupFilterButton() {
 
         if (isFilterVisible) {
             filterControls.classList.remove('hidden');
-            filterControls.style.position = 'fixed';
-            filterControls.style.top = '1rem';
+            filterControls.style.position = 'absolute'; // Scrolls with page
+            filterControls.style.top = `${currentScrollY + 1}rem`; // Position relative to scroll
             filterControls.style.left = '50%';
             filterControls.style.transform = 'translateX(-50%)';
             filterControls.style.width = 'calc(100% - 2rem)';
@@ -563,9 +563,9 @@ function setupFilterButton() {
             window.scrollTo(0, currentScrollY); // Maintain scroll position
         } else {
             filterControls.classList.add('hidden');
-            filterControls.style.position = 'sticky';
+            filterControls.style.position = 'fixed'; // Reset to fixed
             filterControls.style.top = '0';
-            filterControls.style.left = 'auto';
+            filterControls.style.left = '0';
             filterControls.style.transform = 'translateX(0)';
             filterControls.style.width = 'auto';
             filterBtn.classList.remove('active');
