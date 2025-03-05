@@ -250,9 +250,9 @@ function showFabricDetails(fabric) {
         fullModal.style.zIndex = '3000'; // Higher z-index for full view
         fullModal.style.background = 'rgba(0, 0, 0, 0.9)';
         fullModal.innerHTML = `
-            <div class="modal-content" style="width: auto; height: auto; padding: 2rem; background: none; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            <div class="modal-content" style="width: 100%; height: 100%; padding: 2rem; background: none; display: flex; align-items: center; justify-content: center; overflow: hidden;">
                 <span class="close" style="color: white; top: 10px; right: 10px; position: absolute;">×</span>
-                <img src="${fabric.imageLink}" style="max-width: 80vw; max-height: 80vh; width: auto; height: auto; object-fit: contain;">
+                <img src="${fabric.imageLink}" style="max-width: calc(100vw - 4rem); max-height: calc(100vh - 4rem); width: auto; height: auto; object-fit: contain;">
             </div>
         `;
         document.body.appendChild(fullModal);
@@ -535,17 +535,18 @@ function setupFilterButton() {
 
     function updateFilterVisibility() {
         const scrollPosition = window.scrollY;
-
         if (scrollPosition > headerHeight + BUFFER_ZONE) {
             filterBtn.classList.remove('hidden');
-            if (!isFilterVisible) {
-                filterControls.classList.add('hidden');
-            }
         } else {
             filterBtn.classList.add('hidden');
-            filterControls.classList.remove('hidden');
             isFilterVisible = false;
             filterBtn.classList.remove('active');
+            filterControls.style.position = 'fixed'; // Reset to fixed
+            filterControls.style.top = '4rem';
+            filterControls.style.left = '50%';
+            filterControls.style.transform = 'translateX(-50%)';
+            filterControls.style.width = '100%';
+            filterControls.style.maxWidth = '1400px';
         }
     }
 
@@ -557,7 +558,6 @@ function setupFilterButton() {
         isFilterVisible = !isFilterVisible;
 
         if (isFilterVisible) {
-            filterControls.classList.remove('hidden');
             filterControls.style.position = 'absolute'; // Scrolls with page
             filterControls.style.top = `${currentScrollY + 1}rem`; // Position relative to scroll
             filterControls.style.left = '50%';
@@ -568,9 +568,8 @@ function setupFilterButton() {
             filterBtn.classList.add('active');
             window.scrollTo(0, currentScrollY); // Maintain scroll position
         } else {
-            filterControls.classList.add('hidden');
             filterControls.style.position = 'fixed'; // Reset to fixed
-            filterControls.style.top = '0';
+            filterControls.style.top = '4rem';
             filterControls.style.left = '50%';
             filterControls.style.transform = 'translateX(-50%)';
             filterControls.style.width = '100%';
