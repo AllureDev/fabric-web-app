@@ -243,11 +243,10 @@ function showFabricDetails(fabric) {
         isImageLoaded = true;
     };
 
-    // Add full resolution viewer
     modalImg.addEventListener('click', () => {
         const fullModal = document.createElement('div');
         fullModal.className = 'modal';
-        fullModal.style.zIndex = '3000'; // Higher z-index for full view
+        fullModal.style.zIndex = '3000';
         fullModal.style.background = 'rgba(0, 0, 0, 0.9)';
         fullModal.innerHTML = `
             <div class="modal-content" style="width: 100%; height: 100%; padding: 2rem; background: none; display: flex; align-items: center; justify-content: center; overflow: hidden;">
@@ -530,57 +529,27 @@ function setupFilterButton() {
     const filterBtn = document.getElementById('filterBtn');
     const filterControls = document.getElementById('filterControls');
     let isFilterVisible = false;
-    const headerHeight = document.querySelector('h1').offsetHeight;
-    const BUFFER_ZONE = 200;
 
-    function updateFilterVisibility() {
-        const scrollPosition = window.scrollY;
-        if (scrollPosition > headerHeight + BUFFER_ZONE) {
-            filterBtn.classList.remove('hidden');
-        } else {
-            filterBtn.classList.add('hidden');
-            isFilterVisible = false;
-            filterBtn.classList.remove('active');
-            filterControls.style.position = 'fixed'; // Reset to fixed
-            filterControls.style.top = '4rem';
-            filterControls.style.left = '50%';
-            filterControls.style.transform = 'translateX(-50%)';
-            filterControls.style.width = '100%';
-            filterControls.style.maxWidth = '1400px';
-        }
-    }
-
-    const debouncedScrollHandler = debounce(updateFilterVisibility, 100);
-    window.addEventListener('scroll', debouncedScrollHandler);
+    // Initially hide the filter controls
+    filterControls.classList.add('hidden');
 
     filterBtn.addEventListener('click', () => {
-        const currentScrollY = window.scrollY; // Store current scroll position
         isFilterVisible = !isFilterVisible;
-
         if (isFilterVisible) {
+            filterControls.classList.remove('hidden');
             filterControls.style.position = 'absolute'; // Scrolls with page
-            filterControls.style.top = `${currentScrollY + 1}rem`; // Position relative to scroll
+            filterControls.style.top = `${window.scrollY + 70}px`; // Position below header
             filterControls.style.left = '50%';
             filterControls.style.transform = 'translateX(-50%)';
             filterControls.style.width = 'calc(100% - 2rem)';
             filterControls.style.maxWidth = '1400px';
             filterControls.style.zIndex = '1001';
             filterBtn.classList.add('active');
-            window.scrollTo(0, currentScrollY); // Maintain scroll position
         } else {
-            filterControls.style.position = 'fixed'; // Reset to fixed
-            filterControls.style.top = '4rem';
-            filterControls.style.left = '50%';
-            filterControls.style.transform = 'translateX(-50%)';
-            filterControls.style.width = '100%';
-            filterControls.style.maxWidth = '1400px';
+            filterControls.classList.add('hidden');
             filterBtn.classList.remove('active');
-            window.scrollTo(0, currentScrollY); // Maintain scroll position
         }
     });
-
-    filterBtn.classList.add('hidden');
-    updateFilterVisibility();
 }
 
 fetchFabrics();
