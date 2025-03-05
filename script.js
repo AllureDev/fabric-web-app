@@ -243,6 +243,26 @@ function showFabricDetails(fabric) {
         isImageLoaded = true;
     };
 
+    // Add full resolution viewer
+    modalImg.addEventListener('click', () => {
+        const fullModal = document.createElement('div');
+        fullModal.className = 'modal';
+        fullModal.style.zIndex = '3000'; // Higher z-index for full view
+        fullModal.style.background = 'rgba(0, 0, 0, 0.9)';
+        fullModal.innerHTML = `
+            <div class="modal-content" style="width: auto; max-width: 95vw; max-height: 95vh; padding: 0; background: none;">
+                <span class="close" style="color: white; top: 10px; right: 10px;">×</span>
+                <img src="${fabric.imageLink}" style="max-width: 100%; max-height: 90vh; object-fit: contain;">
+            </div>
+        `;
+        document.body.appendChild(fullModal);
+
+        fullModal.querySelector('.close').addEventListener('click', () => fullModal.remove());
+        fullModal.addEventListener('click', (e) => {
+            if (e.target === fullModal) fullModal.remove();
+        });
+    });
+
     function updateMagnifier(e, clientX, clientY) {
         if (!isImageLoaded) return;
         const rect = modalImg.getBoundingClientRect();
@@ -518,13 +538,6 @@ function setupFilterButton() {
         } else {
             filterBtn.classList.add('hidden');
             filterControls.classList.remove('hidden');
-            filterControls.style.position = 'sticky';
-            filterControls.style.top = '0';
-            filterControls.style.left = 'auto';
-            filterControls.style.transform = 'translateX(0)';
-            filterControls.style.width = 'auto';
-            filterControls.style.maxWidth = '1400px';
-            filterControls.style.zIndex = '1000';
             isFilterVisible = false;
             filterBtn.classList.remove('active');
         }
@@ -534,6 +547,7 @@ function setupFilterButton() {
     window.addEventListener('scroll', debouncedScrollHandler);
 
     filterBtn.addEventListener('click', () => {
+        const currentScrollY = window.scrollY; // Store current scroll position
         isFilterVisible = !isFilterVisible;
 
         if (isFilterVisible) {
@@ -546,6 +560,7 @@ function setupFilterButton() {
             filterControls.style.maxWidth = '1400px';
             filterControls.style.zIndex = '1001';
             filterBtn.classList.add('active');
+            window.scrollTo(0, currentScrollY); // Maintain scroll position
         } else {
             filterControls.classList.add('hidden');
             filterControls.style.position = 'sticky';
@@ -554,6 +569,7 @@ function setupFilterButton() {
             filterControls.style.transform = 'translateX(0)';
             filterControls.style.width = 'auto';
             filterBtn.classList.remove('active');
+            window.scrollTo(0, currentScrollY); // Maintain scroll position
         }
     });
 
