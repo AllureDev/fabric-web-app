@@ -217,7 +217,7 @@ h1 {
     justify-content: center;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     cursor: pointer;
-    z-index: 999;
+    z-index: 999; /* Below modal but above cards */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     transform: scale(1);
 }
@@ -347,6 +347,7 @@ h1 {
     align-items: center;
     justify-content: center;
     padding: clamp(1rem, 2vw, 2rem); /* Dynamic padding */
+    z-index: 2000; /* Increased to be above all elements */
 }
 
 .modal-content {
@@ -520,7 +521,7 @@ h1 {
     }
 
     .image-container {
-        height: 180px;
+        height: 240px; /* Increased from 180px for longer mobile cards */
     }
 
     .modal-content {
