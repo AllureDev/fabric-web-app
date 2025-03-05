@@ -250,12 +250,18 @@ function showFabricDetails(fabric) {
         fullModal.style.zIndex = '3000'; // Higher z-index for full view
         fullModal.style.background = 'rgba(0, 0, 0, 0.9)';
         fullModal.innerHTML = `
-            <div class="modal-content" style="width: auto; height: auto; padding: 2rem; background: none; overflow: hidden;">
-                <span class="close" style="color: white; top: 10px; right: 10px;">×</span>
-                <img src="${fabric.imageLink}" style="max-width: 80vw; max-height: 80vh; object-fit: contain;">
+            <div class="modal-content" style="width: auto; height: auto; padding: 2rem; background: none; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                <span class="close" style="color: white; top: 10px; right: 10px; position: absolute;">×</span>
+                <img src="${fabric.imageLink}" style="max-width: 80vw; max-height: 80vh; width: auto; height: auto; object-fit: contain;">
             </div>
         `;
         document.body.appendChild(fullModal);
+
+        const fullImg = fullModal.querySelector('img');
+        fullImg.onerror = () => {
+            console.error('Full resolution image failed to load:', fullImg.src);
+            fullImg.src = PLACEHOLDER_IMAGE;
+        };
 
         fullModal.querySelector('.close').addEventListener('click', () => fullModal.remove());
         fullModal.addEventListener('click', (e) => {
@@ -565,9 +571,10 @@ function setupFilterButton() {
             filterControls.classList.add('hidden');
             filterControls.style.position = 'fixed'; // Reset to fixed
             filterControls.style.top = '0';
-            filterControls.style.left = '0';
-            filterControls.style.transform = 'translateX(0)';
-            filterControls.style.width = 'auto';
+            filterControls.style.left = '50%';
+            filterControls.style.transform = 'translateX(-50%)';
+            filterControls.style.width = '100%';
+            filterControls.style.maxWidth = '1400px';
             filterBtn.classList.remove('active');
             window.scrollTo(0, currentScrollY); // Maintain scroll position
         }
