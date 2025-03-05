@@ -28,8 +28,8 @@ h1 {
     text-align: center;
     padding: 1.5rem 0;
     letter-spacing: 0.5px;
-    position: relative; /* Ensure it doesn't overlap with fixed controls */
-    z-index: 998; /* Below controls */
+    position: relative;
+    z-index: 1001; /* Above controls */
 }
 
 /* Controls */
@@ -41,25 +41,14 @@ h1 {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    position: fixed; /* Fixed at top */
-    top: 0;
+    position: fixed; /* Fixed beneath header */
+    top: 4rem; /* Below h1 (1.5rem padding + 2rem font size + buffer) */
     left: 50%;
     transform: translateX(-50%);
     width: 100%;
     max-width: 1400px;
-    z-index: 1000;
+    z-index: 1000; /* Below header, above cards */
     backdrop-filter: blur(5px);
-    margin: 0 auto; /* Remove margin to stick to top */
-}
-
-/* Hidden State for Filter Panel */
-.controls.hidden {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-    pointer-events: none;
 }
 
 /* Filter Wrapper */
@@ -259,7 +248,7 @@ h1 {
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1.25rem;
     padding: 1rem 0;
-    margin-top: 5rem; /* Space for fixed filter menu */
+    margin-top: 7rem; /* Space for fixed header and controls */
 }
 
 /* Fabric Card */
@@ -496,6 +485,7 @@ h1 {
     .controls {
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
         padding: 0.5rem;
+        top: 3.5rem; /* Adjust for smaller header */
     }
 
     .filter-wrapper {
@@ -525,6 +515,7 @@ h1 {
     .grid {
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
         gap: 1rem;
+        margin-top: 6rem; /* Adjust for smaller header/controls */
     }
 
     .image-container {
