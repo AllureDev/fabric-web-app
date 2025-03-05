@@ -28,6 +28,8 @@ h1 {
     text-align: center;
     padding: 1.5rem 0;
     letter-spacing: 0.5px;
+    position: relative; /* Ensure it doesn't overlap with fixed controls */
+    z-index: 998; /* Below controls */
 }
 
 /* Controls */
@@ -35,7 +37,6 @@ h1 {
     background: rgba(255, 255, 255, 0.95);
     border-radius: 12px;
     padding: 1rem;
-    margin: 1rem 0;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -43,15 +44,15 @@ h1 {
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     opacity: 1;
     transform: translateY(0) scale(1);
-    position: fixed; /* Fixed at top, does not scroll */
+    position: fixed; /* Fixed at top */
     top: 0;
-    left: 0;
-    right: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 1400px;
     z-index: 1000;
     backdrop-filter: blur(5px);
-    max-width: 1400px;
-    margin-left: auto;
-    margin-right: auto;
+    margin: 0 auto; /* Remove margin to stick to top */
 }
 
 /* Hidden State for Filter Panel */
